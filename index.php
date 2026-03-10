@@ -38,6 +38,14 @@ if ($adminPath !== 'admin' && ($requestPath === $adminPath || str_starts_with($r
         exit;
     }
 
+    // Parse query string from REQUEST_URI since nginx may not pass it correctly during rewrite
+    $adminQueryString = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
+    if ($adminQueryString !== null && $adminQueryString !== '') {
+        $_SERVER['QUERY_STRING'] = $adminQueryString;
+        parse_str($adminQueryString, $parsedQuery);
+        $_GET = array_merge($_GET, $parsedQuery);
+    }
+
     require $adminTarget;
     exit;
 }
