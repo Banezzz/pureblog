@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/functions.php';
 require_setup_redirect();
+send_security_headers();
 
 $config = load_config();
 $fontStack = font_stack_css($config['theme']['font_stack'] ?? 'sans');
