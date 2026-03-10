@@ -32,6 +32,8 @@ function fetch_latest_pureblog_release(): array
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         $raw = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $curlErr = curl_error($ch);
@@ -47,6 +49,10 @@ function fetch_latest_pureblog_release(): array
                 'method' => 'GET',
                 'timeout' => 5,
                 'header' => implode("\r\n", $headers),
+            ],
+            'ssl' => [
+                'verify_peer' => true,
+                'verify_peer_name' => true,
             ],
         ]);
         $raw = @file_get_contents($endpoint, false, $context);
@@ -195,6 +201,13 @@ function remove_directory_recursive(string $path): void
 
 function download_url_to_file(string $url, string $destination): ?string
 {
+    // Domain whitelist for security
+    $allowedHosts = ['api.github.com', 'github.com', 'codeload.github.com'];
+    $parsedUrl = parse_url($url);
+    if (!isset($parsedUrl['host']) || !in_array($parsedUrl['host'], $allowedHosts, true)) {
+        return 'Download URL not from allowed domain.';
+    }
+
     $headers = [
         'User-Agent: Pureblog-Upgrader',
         'Accept: */*',
@@ -214,6 +227,8 @@ function download_url_to_file(string $url, string $destination): ?string
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 20);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         $ok = curl_exec($ch);
         $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
         $curlErr = curl_error($ch);
@@ -231,6 +246,10 @@ function download_url_to_file(string $url, string $destination): ?string
             'method' => 'GET',
             'timeout' => 20,
             'header' => implode("\r\n", $headers),
+        ],
+        'ssl' => [
+            'verify_peer' => true,
+            'verify_peer_name' => true,
         ],
     ]);
     $raw = @file_get_contents($url, false, $context);
