@@ -34,8 +34,16 @@ if ($slug === '') {
         'image/gif' => 'gif',
         'image/webp' => 'webp',
     ];
-    $finfo = new finfo(FILEINFO_MIME_TYPE);
-    $mimeType = $finfo->file($_FILES['image']['tmp_name']) ?: '';
+    $extToMime = [
+        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+        'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp',
+    ];
+    $finfo = class_exists('finfo') ? new finfo(FILEINFO_MIME_TYPE) : null;
+    $mimeType = $finfo ? ($finfo->file($_FILES['image']['tmp_name']) ?: '') : '';
+    if ($mimeType === '') {
+        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+        $mimeType = $extToMime[$ext] ?? '';
+    }
     if (!isset($allowedTypes[$mimeType])) {
         $error = 'Unsupported image type. Use JPG, PNG, GIF, or WebP.';
     }

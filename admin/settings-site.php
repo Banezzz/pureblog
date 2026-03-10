@@ -108,10 +108,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
             'image/x-icon' => 'ico',
             'image/vnd.microsoft.icon' => 'ico',
         ];
-        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        // Extension to MIME fallback (when fileinfo is unavailable)
+        $extToMime = [
+            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
+            'png' => 'image/png', 'gif' => 'image/gif',
+            'webp' => 'image/webp', 'ico' => 'image/x-icon',
+        ];
+        $finfo = class_exists('finfo') ? new finfo(FILEINFO_MIME_TYPE) : null;
 
         if (!empty($_FILES['favicon']['name']) && $_FILES['favicon']['error'] === UPLOAD_ERR_OK) {
-            $faviconMime = $finfo->file($_FILES['favicon']['tmp_name']) ?: '';
+            $faviconMime = $finfo ? ($finfo->file($_FILES['favicon']['tmp_name']) ?: '') : '';
+            if ($faviconMime === '') {
+                $ext = strtolower(pathinfo($_FILES['favicon']['name'], PATHINFO_EXTENSION));
+                $faviconMime = $extToMime[$ext] ?? '';
+            }
             if (!isset($allowedImageTypes[$faviconMime])) {
                 $errors[] = 'Favicon must be an image file (JPG, PNG, GIF, WebP, or ICO).';
             } else {
@@ -131,7 +141,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
         }
 
         if (!empty($_FILES['og_image']['name']) && $_FILES['og_image']['error'] === UPLOAD_ERR_OK) {
-            $ogMime = $finfo->file($_FILES['og_image']['tmp_name']) ?: '';
+            $ogMime = $finfo ? ($finfo->file($_FILES['og_image']['tmp_name']) ?: '') : '';
+            if ($ogMime === '') {
+                $ext = strtolower(pathinfo($_FILES['og_image']['name'], PATHINFO_EXTENSION));
+                $ogMime = $extToMime[$ext] ?? '';
+            }
             if (!isset($allowedImageTypes[$ogMime])) {
                 $errors[] = 'Open Graph image must be an image file (JPG, PNG, GIF, WebP, or ICO).';
             } else {
