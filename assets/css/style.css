@@ -362,6 +362,10 @@ code {
     font-size: 1rem;
 }
 
+h2 code, h3 code {
+  font-size: 90%;
+}
+
 kbd {
     font-size: 1rem;
     background: var(--accent-bg-color);
