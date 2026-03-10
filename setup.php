@@ -9,6 +9,9 @@ if (is_installed()) {
     exit;
 }
 
+send_security_headers();
+start_admin_session();
+
 $config = default_config();
 $errors = [];
 $values = [
@@ -19,6 +22,7 @@ $values = [
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $values['site_title'] = trim($_POST['site_title'] ?? '');
     $values['site_tagline'] = trim($_POST['site_tagline'] ?? '');
     $values['base_url'] = trim($_POST['base_url'] ?? '');
@@ -81,6 +85,7 @@ require __DIR__ . '/includes/admin-head.php';
         <?php endif; ?>
 
         <form method="post">
+            <?= csrf_field() ?>
             <label for="site_title">Site title</label>
             <input type="text" id="site_title" name="site_title" value="<?= e($values['site_title']) ?>" placeholder="Sally's Blog" required>
 
