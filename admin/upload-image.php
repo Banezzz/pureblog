@@ -19,7 +19,7 @@ $error = '';
 // Validate slug to prevent path traversal
 if ($slug === '') {
     $error = 'Save the post first so it has a slug.';
-} elseif (!preg_match('/^[\p{L}\p{N}_-]{1,120}$/u', $slug) || str_contains($slug, '..')) {
+} elseif (!validate_slug($slug)) {
     $error = 'Invalid slug.';
 } elseif (!isset($_FILES['image'])) {
     $error = 'No image uploaded.';

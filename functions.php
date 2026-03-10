@@ -435,6 +435,7 @@ function enforce_admin_request_path(): void
 function start_admin_session(): void
 {
     enforce_admin_request_path();
+    send_security_headers();
 
     if (session_status() !== PHP_SESSION_ACTIVE) {
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
@@ -982,6 +983,9 @@ function save_page(array &$page, ?string $originalSlug = null, ?string $original
 
 function delete_page_by_slug(string $slug): bool
 {
+    if (!validate_slug($slug)) {
+        return false;
+    }
     $path = PUREBLOG_PAGES_PATH . '/' . $slug . '.md';
     if (!is_file($path)) {
         return false;
@@ -1029,6 +1033,9 @@ function find_post_filepath_by_slug(string $slug): ?string
 
 function delete_post_by_slug(string $slug): bool
 {
+    if (!validate_slug($slug)) {
+        return false;
+    }
     $path = find_post_filepath_by_slug($slug);
     if ($path === null) {
         return false;
