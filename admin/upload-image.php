@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -77,8 +77,8 @@ if ($error === '') {
 }
 
 $redirect = $editorType === 'page'
-    ? '/admin/edit-page.php?slug=' . urlencode($slug)
-    : '/admin/edit-post.php?slug=' . urlencode($slug);
+    ? admin_url('edit-page.php') . '?slug=' . urlencode($slug)
+    : admin_url('edit-post.php') . '?slug=' . urlencode($slug);
 if ($message !== '') {
     $redirect .= '&uploaded=' . urlencode($message);
 } elseif ($error !== '') {

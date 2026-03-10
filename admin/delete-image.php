@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -16,8 +16,8 @@ $filename = trim($_POST['filename'] ?? '');
 $editorType = trim($_POST['editor_type'] ?? 'post');
 
 $redirect = $editorType === 'page'
-    ? '/admin/edit-page.php?slug=' . urlencode($slug)
-    : '/admin/edit-post.php?slug=' . urlencode($slug);
+    ? admin_url('edit-page.php') . '?slug=' . urlencode($slug)
+    : admin_url('edit-post.php') . '?slug=' . urlencode($slug);
 
 if ($slug === '' || ($editorType !== 'page' && $date === '') || $filename === '') {
     header('Location: ' . $redirect . '&upload_error=' . urlencode('Missing image data.'));

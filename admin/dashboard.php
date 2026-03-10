@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -137,9 +137,9 @@ require __DIR__ . '/../includes/admin-head.php';
                 <dialog id="layout-picker" aria-labelledby="layout-picker-title">
                     <h2 id="layout-picker-title">Choose a layout</h2>
                     <ul class="layout-picker-list">
-                        <li><a href="/admin/edit-post.php?action=new">Default post</a></li>
+                        <li><a href="<?= e(admin_url('edit-post.php')) ?>?action=new">Default post</a></li>
                         <?php foreach ($availableLayouts as $layout): ?>
-                            <li><a href="/admin/edit-post.php?action=new&amp;layout=<?= urlencode($layout['name']) ?>"><?= e($layout['label']) ?></a></li>
+                            <li><a href="<?= e(admin_url('edit-post.php')) ?>?action=new&amp;layout=<?= urlencode($layout['name']) ?>"><?= e($layout['label']) ?></a></li>
                         <?php endforeach; ?>
                     </ul>
                     <button type="button" id="layout-picker-close" class="delete">
@@ -158,7 +158,7 @@ require __DIR__ . '/../includes/admin-head.php';
                 })();
                 </script>
             <?php else: ?>
-                <a href="/admin/edit-post.php?action=new">
+                <a href="<?= e(admin_url('edit-post.php')) ?>?action=new">
                     <svg class="icon" aria-hidden="true"><use href="/admin/icons/sprite.svg#icon-file-plus-corner"></use></svg>
                     New post
                 </a>
@@ -181,7 +181,7 @@ require __DIR__ . '/../includes/admin-head.php';
             <ul class="admin-list">
                 <?php foreach ($posts as $post): ?>
                     <li class="admin-list-item">
-                        <a class="admin-list-title" href="/admin/edit-post.php?slug=<?= e($post['slug']) ?>">
+                        <a class="admin-list-title" href="<?= e(admin_url('edit-post.php')) ?>?slug=<?= e($post['slug']) ?>">
                             <?= e($post['title']) ?>
                         </a>
                         <div class="admin-list-meta">
@@ -195,10 +195,10 @@ require __DIR__ . '/../includes/admin-head.php';
                 <?php $searchQuery = $search !== '' ? '&q=' . urlencode($search) : ''; ?>
                 <nav class="pagination">
                     <?php if ($page > 1): ?>
-                        <a href="/admin/dashboard.php?page=<?= e((string) ($page - 1)) ?><?= $searchQuery ?>">&larr; Newer posts</a>
+                        <a href="<?= e(admin_url('dashboard.php')) ?>?page=<?= e((string) ($page - 1)) ?><?= $searchQuery ?>">&larr; Newer posts</a>
                     <?php endif; ?>
                     <?php if ($page < $totalPages): ?>
-                        <a href="/admin/dashboard.php?page=<?= e((string) ($page + 1)) ?><?= $searchQuery ?>">Older posts &rarr;</a>
+                        <a href="<?= e(admin_url('dashboard.php')) ?>?page=<?= e((string) ($page + 1)) ?><?= $searchQuery ?>">Older posts &rarr;</a>
                     <?php endif; ?>
                 </nav>
             <?php endif; ?>

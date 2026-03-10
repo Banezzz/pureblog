@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'slug' => $slug,
         'created_at' => time(),
     ];
-    $redirect = '/admin/preview.php?type=' . urlencode($editorType);
+    $redirect = admin_url('preview.php') . '?type=' . urlencode($editorType);
     if ($slug !== '') {
         $redirect .= '&slug=' . urlencode($slug);
     }

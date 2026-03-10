@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
     } elseif (!delete_post_by_slug($slug)) {
         $errors[] = 'Unable to delete post.';
     } else {
-        header('Location: /admin/dashboard.php?deleted=1');
+        header('Location: ' . admin_url('dashboard.php') . '?deleted=1');
         exit;
     }
 } else {

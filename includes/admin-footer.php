@@ -1,9 +1,6 @@
 <?php
 // Shared admin footer.
 ?>
-<footer>
-    <p><a href="https://pureblog.org">Pure Blog</a> was created with 💙 by <a href="https://kevquirk.com">Kev Quirk</a>.</p>
-</footer>
 <script>
     document.addEventListener('keydown', (event) => {
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {

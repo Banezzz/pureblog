@@ -1,5 +1,6 @@
 (() => {
   const config = window.PureblogEditorConfig || {};
+  const adminBasePath = (config.adminBasePath || '/admin').replace(/\/+$/, '');
   const contentField = document.getElementById('content');
   if (!contentField || typeof CodeMirror === 'undefined') {
     return;
@@ -186,7 +187,7 @@
 
     const form = document.createElement('form');
     form.method = 'post';
-    form.action = '/admin/preview.php';
+    form.action = `${adminBasePath}/preview.php`;
     form.target = '_blank';
 
     const fields = [
@@ -299,7 +300,7 @@
         }
         formData.append('csrf_token', config.csrfToken || '');
 
-        const response = await fetch('/admin/upload-image.php', {
+        const response = await fetch(`${adminBasePath}/upload-image.php`, {
           method: 'POST',
           body: formData,
         });

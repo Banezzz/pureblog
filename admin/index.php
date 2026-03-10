@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 
 require_setup_redirect();
 
@@ -17,7 +17,7 @@ $lockoutUntil = (int) ($_SESSION['lockout_until'] ?? 0);
 $isLockedOut = $lockoutUntil > $now;
 
 if (is_admin_logged_in()) {
-    header('Location: /admin/dashboard.php');
+    header('Location: ' . admin_url('dashboard.php'));
     exit;
 }
 
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['is_admin'] = true;
             $_SESSION['login_failures'] = 0;
             $_SESSION['lockout_until'] = 0;
-            header('Location: /admin/dashboard.php');
+            header('Location: ' . admin_url('dashboard.php'));
             exit;
         }
 

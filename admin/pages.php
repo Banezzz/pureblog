@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -24,7 +24,7 @@ require __DIR__ . '/../includes/admin-head.php';
     <main class="mid">
         <h1>Pages</h1>
         <nav class="editor-actions">
-            <a href="/admin/edit-page.php?action=new">
+            <a href="<?= e(admin_url('edit-page.php')) ?>?action=new">
                 <svg class="icon" aria-hidden="true"><use href="/admin/icons/sprite.svg#icon-file-plus-corner"></use></svg>
                 New page
             </a>
@@ -43,7 +43,7 @@ require __DIR__ . '/../includes/admin-head.php';
             <ul class="admin-list">
                 <?php foreach ($pages as $page): ?>
                     <li class="admin-list-item">
-                        <a class="admin-list-title" href="/admin/edit-page.php?slug=<?= e($page['slug']) ?>">
+                        <a class="admin-list-title" href="<?= e(admin_url('edit-page.php')) ?>?slug=<?= e($page['slug']) ?>">
                             <?= e($page['title']) ?>
                         </a>
                         <div class="admin-list-meta">

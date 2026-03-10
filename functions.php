@@ -57,6 +57,7 @@ function default_config(): array
         'date_format' => 'F j, Y',
         'admin_username' => '',
         'admin_password_hash' => '',
+        'admin_path' => 'admin',
         'cache' => [
             'enabled' => false,
             'rss_ttl' => 3600,
@@ -227,8 +228,69 @@ function require_setup_redirect(): void
     }
 }
 
+function normalize_admin_path_segment(string $value): string
+{
+    $segment = trim(strtolower($value));
+    $segment = trim($segment, '/');
+    $segment = preg_replace('/[^a-z0-9_-]/', '', $segment) ?? '';
+
+    return $segment !== '' ? $segment : 'admin';
+}
+
+function admin_path_segment(): string
+{
+    static $segment = null;
+    if ($segment !== null) {
+        return $segment;
+    }
+
+    $config = load_config();
+    $segment = normalize_admin_path_segment((string) ($config['admin_path'] ?? 'admin'));
+
+    return $segment;
+}
+
+function admin_url(string $path = 'index.php'): string
+{
+    $base = '/' . admin_path_segment();
+    $path = ltrim(trim($path), '/');
+
+    if ($path === '' || $path === 'index.php') {
+        return $base;
+    }
+
+    return $base . '/' . $path;
+}
+
+function is_request_under_admin_path(string $requestPath): bool
+{
+    $segment = admin_path_segment();
+    return $requestPath === $segment || str_starts_with($requestPath, $segment . '/');
+}
+
+function enforce_admin_request_path(): void
+{
+    $requestUriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+    $requestPath = trim(rawurldecode($requestUriPath), '/');
+
+    if (
+        !str_starts_with($requestPath, 'admin/')
+        && $requestPath !== 'admin'
+        && !is_request_under_admin_path($requestPath)
+    ) {
+        return;
+    }
+
+    if (!is_request_under_admin_path($requestPath)) {
+        http_response_code(404);
+        exit('Not found.');
+    }
+}
+
 function start_admin_session(): void
 {
+    enforce_admin_request_path();
+
     if (session_status() !== PHP_SESSION_ACTIVE) {
         $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
             || (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);
@@ -278,7 +340,7 @@ function is_admin_logged_in(): bool
 function require_admin_login(): void
 {
     if (!is_admin_logged_in()) {
-        header('Location: /admin/index.php');
+        header('Location: ' . admin_url('index.php'));
         exit;
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -855,11 +855,11 @@ require __DIR__ . '/../includes/admin-head.php';
             <?php endif; ?>
             <p><strong>Repository:</strong> <a href="https://github.com/kevquirk/pureblog" target="_blank" rel="noopener noreferrer">github.com/kevquirk/pureblog</a></p>
             <p>
-                <a class="button" href="/admin/settings-updates.php?check=1">
+                <a class="button" href="<?= e(admin_url('settings-updates.php')) ?>?check=1">
                     <svg class="icon" aria-hidden="true"><use href="/admin/icons/sprite.svg#icon-upgrade"></use></svg>
                     Check latest release
                 </a>
-                <a class="button" href="/admin/settings-updates.php?package_plan=1">
+                <a class="button" href="<?= e(admin_url('settings-updates.php')) ?>?package_plan=1">
                     <svg class="icon" aria-hidden="true"><use href="/admin/icons/sprite.svg#icon-eye"></use></svg>
                     Inspect release package
                 </a>
@@ -927,7 +927,7 @@ require __DIR__ . '/../includes/admin-head.php';
                 </ul>
             <?php endif; ?>
 
-            <form method="post" action="/admin/settings-updates.php" onsubmit="return confirm('Apply latest update now? This will replace core files and keep /config, /content, /data, and all .htaccess files.');">
+            <form method="post" action="<?= e(admin_url('settings-updates.php')) ?>" onsubmit="return confirm('Apply latest update now? This will replace core files and keep /config, /content, /data, and all .htaccess files.');">
                 <?= csrf_field() ?>
                 <button class="button save" type="submit" name="apply_update" value="1">
                     <svg class="icon" aria-hidden="true"><use href="/admin/icons/sprite.svg#icon-upgrade"></use></svg>
@@ -942,7 +942,7 @@ require __DIR__ . '/../includes/admin-head.php';
         <section class="section-divider">
             <span class="title">Backup restore</span>
             <p>Backups in <code>/backup</code> are excluded from updates and can be used for rollback.</p>
-            <form method="post" action="/admin/settings-updates.php">
+            <form method="post" action="<?= e(admin_url('settings-updates.php')) ?>">
                 <?= csrf_field() ?>
                 <label for="backup-name">Available backups</label>
                 <select id="backup-name" name="backup_name" required>

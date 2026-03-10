@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
+require_once __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
@@ -80,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
         );
         if ($saved) {
             $redirectSlug = $page['slug'] === '' ? slugify($page['title']) : $page['slug'];
-            header('Location: /admin/edit-page.php?slug=' . urlencode($redirectSlug) . '&saved=1');
+            header('Location: ' . admin_url('edit-page.php') . '?slug=' . urlencode($redirectSlug) . '&saved=1');
             exit;
         }
         $errors[] = $saveError !== '' ? $saveError : 'Unable to save page.';
@@ -162,7 +162,7 @@ require __DIR__ . '/../includes/admin-head.php';
                     <textarea id="content" name="content" rows="18"><?= e($page['content']) ?></textarea>
                 </form>
                 <?php if ($isEditing && $page['slug'] !== ''): ?>
-                    <form method="post" action="/admin/delete-page.php" id="delete-page-form">
+                    <form method="post" action="<?= e(admin_url('delete-page.php')) ?>" id="delete-page-form">
                         <input type="hidden" name="slug" value="<?= e($page['slug']) ?>">
                         <?= csrf_field() ?>
                     </form>
@@ -195,7 +195,7 @@ require __DIR__ . '/../includes/admin-head.php';
                 <section class="sidebar-section">
                     <div class="section-divider">
                         <span class="title">Images</span>
-                    <form method="post" action="/admin/upload-image.php" enctype="multipart/form-data" class="upload-form">
+                    <form method="post" action="<?= e(admin_url('upload-image.php')) ?>" enctype="multipart/form-data" class="upload-form">
                         <input type="hidden" name="slug" value="<?= e($page['slug']) ?>">
                         <input type="hidden" name="editor_type" value="page">
                         <?= csrf_field() ?>
@@ -215,7 +215,7 @@ require __DIR__ . '/../includes/admin-head.php';
                                 <li>
                                     <code><?= e($image['filename']) ?></code>
                                     <button type="button" class="link-button copy-markdown" data-markdown="<?= e($image['markdown']) ?>"><svg class="icon" aria-hidden="true"><use href="/admin/icons/sprite.svg#icon-copy"></use></svg> Copy</button>
-                                <form method="post" action="/admin/delete-image.php" class="inline-form" onsubmit="return confirm('Delete this image?');">
+                                <form method="post" action="<?= e(admin_url('delete-image.php')) ?>" class="inline-form" onsubmit="return confirm('Delete this image?');">
                                     <input type="hidden" name="slug" value="<?= e($page['slug']) ?>">
                                     <input type="hidden" name="editor_type" value="page">
                                     <input type="hidden" name="filename" value="<?= e($image['filename']) ?>">
@@ -236,6 +236,7 @@ require __DIR__ . '/../includes/admin-head.php';
             editorType: 'page',
             formId: 'page-form',
             csrfToken: '<?= e(csrf_token()) ?>',
+            adminBasePath: '<?= e(admin_url('')) ?>',
         };
     </script>
     <script src="/admin/js/editor.js?v=<?= e((string) @filemtime(__DIR__ . '/js/editor.js')) ?>"></script>

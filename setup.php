@@ -5,7 +5,7 @@ declare(strict_types=1);
 require __DIR__ . '/functions.php';
 
 if (is_installed()) {
-    header('Location: /admin/index.php');
+    header('Location: ' . admin_url('index.php'));
     exit;
 }
 
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_dir($configDir) && !mkdir($configDir, 0755, true)) {
             $errors[] = 'Failed to create config directory. Check permissions.';
         } elseif (save_config($config)) {
-            header('Location: /admin/index.php?setup=1', true, 303);
+            header('Location: ' . admin_url('index.php') . '?setup=1', true, 303);
             exit;
         }
 
