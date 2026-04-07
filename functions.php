@@ -585,7 +585,17 @@ function is_custom_admin_routed(): bool
 
 /**
  * Block direct /admin/ access when a custom admin path is configured.
- * Call this at the start of every admin session.
+ *
+ * Uses a session flag so that internal redirects within the admin panel
+ * (e.g. save post → redirect to /admin/edit-post.php?saved=1) continue
+ * to work after the user enters through the custom path.
+ *
+ * Flow:
+ *   1. User visits /<custom-path>/ → index.php sets global flag → session
+ *      flag is set here → access granted.
+ *   2. Internal redirect to /admin/... → session flag already set → allowed.
+ *   3. Direct /admin/ without prior custom-path visit → no session flag → 404.
+ *   4. Logout destroys session → flag cleared → must re-enter via custom path.
  */
 function guard_admin_path(): void
 {
@@ -593,17 +603,22 @@ function guard_admin_path(): void
     if ($custom === '') {
         return; // No custom path configured, allow normal /admin/ access
     }
+    // Request came through the custom path routing in index.php
     if (is_custom_admin_routed()) {
-        return; // Request came through the custom path, allow
+        $_SESSION['admin_path_verified'] = true;
+        return;
     }
-    // Direct /admin/ access is blocked
+    // Already verified in this session (e.g. internal redirect)
+    if (!empty($_SESSION['admin_path_verified'])) {
+        return;
+    }
+    // Direct /admin/ access without session → block
     http_response_code(404);
     exit('Not found.');
 }
 
 function start_admin_session(): void
 {
-    guard_admin_path();
     send_security_headers();
 
     if (session_status() !== PHP_SESSION_ACTIVE) {
@@ -618,6 +633,9 @@ function start_admin_session(): void
         ]);
         session_start();
     }
+
+    // Guard after session is started so we can check/set session flags
+    guard_admin_path();
 }
 
 function csrf_token(): string
