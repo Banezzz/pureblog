@@ -17,6 +17,12 @@ $notice = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) {
     verify_csrf();
     $adminUsername = trim($_POST['admin_username'] ?? '');
+    $newAdminPath = trim($_POST['admin_path'] ?? '');
+    $newAdminPath = trim($newAdminPath, '/');
+    $newAdminPath = preg_replace('/[^a-z0-9_-]/', '', strtolower($newAdminPath)) ?? '';
+    if ($newAdminPath === 'admin') {
+        $newAdminPath = '';
+    }
     $passwordCurrent = $_POST['current_password'] ?? '';
     $passwordNew = $_POST['new_password'] ?? '';
     $passwordConfirm = $_POST['confirm_password'] ?? '';
@@ -35,12 +41,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
 
     if (!$errors) {
         $config['admin_username'] = $adminUsername;
+        $oldAdminPath = custom_admin_path();
+        $config['admin_path'] = $newAdminPath;
 
         if ($passwordNew !== '') {
             $config['admin_password_hash'] = password_hash($passwordNew, PASSWORD_DEFAULT);
         }
 
         if (save_config($config)) {
+            if ($newAdminPath !== $oldAdminPath) {
+                $newBase = $newAdminPath !== '' ? $newAdminPath : 'admin';
+                header('Location: ' . base_path() . '/' . $newBase . '/settings-user.php?saved=1');
+                exit;
+            }
             $notice = t('admin.settings.user.notice_updated');
         } else {
             $errors[] = t('admin.settings.user.error_save');
@@ -66,6 +79,26 @@ require __DIR__ . '/../includes/admin-head.php';
                 <span class="title"><?= e(t('admin.settings.user.section_account')) ?></span>
                 <label for="admin_username"><?= e(t('admin.settings.user.username')) ?></label>
                 <input type="text" id="admin_username" name="admin_username" value="<?= e($config['admin_username'] ?? '') ?>" required>
+
+                <label for="admin_path">Custom admin URL path</label>
+                <input
+                    type="text"
+                    id="admin_path"
+                    name="admin_path"
+                    value="<?= e($config['admin_path'] ?? '') ?>"
+                    pattern="[a-z0-9_-]*"
+                    maxlength="60"
+                    placeholder="Leave empty to use default /admin/"
+                >
+                <?php
+                    $currentPath = custom_admin_path();
+                    $displayPath = $currentPath !== '' ? $currentPath : 'admin';
+                ?>
+                <p class="tip">Current admin URL: <code><?= e(base_path() . '/' . $displayPath . '/') ?></code>
+                <?php if ($currentPath !== ''): ?>
+                    <br>Direct access to <code>/admin/</code> is blocked.
+                <?php endif; ?>
+                </p>
             </section>
 
             <section class="section-divider">

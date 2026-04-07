@@ -74,6 +74,7 @@ function default_config(): array
         'date_format' => 'F j, Y',
         'admin_username' => '',
         'admin_password_hash' => '',
+        'admin_path' => '',
         'cache' => [
             'enabled' => false,
             'rss_ttl' => 3600,
@@ -555,8 +556,54 @@ function clear_login_failures(): void
     fclose($fp);
 }
 
+/**
+ * Get the configured custom admin path segment, or empty string if not set.
+ */
+function custom_admin_path(): string
+{
+    static $path = null;
+    if ($path !== null) {
+        return $path;
+    }
+    $config = load_config();
+    $raw = trim((string) ($config['admin_path'] ?? ''));
+    $raw = trim($raw, '/');
+    $raw = preg_replace('/[^a-z0-9_-]/', '', strtolower($raw)) ?? '';
+    // Avoid collisions with existing top-level routes
+    $path = ($raw !== '' && $raw !== 'admin') ? $raw : '';
+    return $path;
+}
+
+/**
+ * Check if the current request arrived through the custom admin path.
+ * Admin PHP files set this flag via index.php routing.
+ */
+function is_custom_admin_routed(): bool
+{
+    return !empty($GLOBALS['__pureblog_custom_admin_routed']);
+}
+
+/**
+ * Block direct /admin/ access when a custom admin path is configured.
+ * Call this at the start of every admin session.
+ */
+function guard_admin_path(): void
+{
+    $custom = custom_admin_path();
+    if ($custom === '') {
+        return; // No custom path configured, allow normal /admin/ access
+    }
+    if (is_custom_admin_routed()) {
+        return; // Request came through the custom path, allow
+    }
+    // Direct /admin/ access is blocked
+    http_response_code(404);
+    exit('Not found.');
+}
+
 function start_admin_session(): void
 {
+    guard_admin_path();
     send_security_headers();
 
     if (session_status() !== PHP_SESSION_ACTIVE) {
