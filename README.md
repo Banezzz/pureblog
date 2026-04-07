@@ -26,3 +26,33 @@ Posts live in `content/posts` and pages live in `content/pages`. When images are
 ## Notes
 - Pure Blog is intentionally minimal and designed for personal sites.
 - HTML in Markdown is supported.
+
+## Upgrading from v1.x to v2.x
+
+When upgrading from v1.x to v2.x, keep the following in mind:
+
+### Data preservation
+Upload all new code files but **do not overwrite** these directories — they contain your data:
+- `config/` — site configuration and credentials
+- `content/posts/` — blog posts
+- `content/pages/` — pages (but note v2.x adds `content/pages/search.md`)
+- `content/images/` — uploaded images
+- `content/css/` — custom CSS
+- `data/` — runtime data
+- `backup/` — backups
+
+### Rebuild search index
+v2.x uses a new JSON-based search index (`content/search-index.json`). After upgrading, the index will be empty and search will return no results. Rebuild it by either:
+- Editing and saving any post in the admin panel (triggers automatic rebuild), or
+- Running on the server: `php -r "require 'functions.php'; build_search_index(); echo 'done';"`
+
+### Removed files
+The following files from v1.x can be safely deleted:
+- `search.php` — replaced by page-based search (`content/pages/search.md`)
+- `search/` directory
+
+### New directories to create
+Ensure these exist with correct permissions after uploading:
+- `content/autosaves/`
+- `lang/`
+- `lib/`
