@@ -10,45 +10,12 @@ send_security_headers();
 // Basic request parsing + route flags.
 $config = load_config();
 $requestUriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
+$bp = base_path();
+if ($bp !== '' && str_starts_with($requestUriPath, $bp)) {
+    $requestUriPath = substr($requestUriPath, strlen($bp));
+}
 $requestPath = trim(rawurldecode($requestUriPath), '/');
 $requestPathWithSlash = $requestPath === '' ? '/' : ('/' . $requestPath);
-
-$adminPath = normalize_admin_path_segment((string) ($config['admin_path'] ?? 'admin'));
-if ($adminPath !== 'admin' && ($requestPath === $adminPath || str_starts_with($requestPath, $adminPath . '/'))) {
-    $adminRelativePath = $requestPath === $adminPath
-        ? 'index.php'
-        : substr($requestPath, strlen($adminPath) + 1);
-    $adminRelativePath = trim((string) $adminRelativePath, '/');
-    if ($adminRelativePath === '') {
-        $adminRelativePath = 'index.php';
-    }
-    if (!str_ends_with($adminRelativePath, '.php')) {
-        $adminRelativePath .= '.php';
-    }
-
-    $adminRoot = realpath(__DIR__ . '/admin');
-    $adminTarget = realpath(__DIR__ . '/admin/' . $adminRelativePath);
-    if (
-        $adminRoot === false
-        || $adminTarget === false
-        || !str_starts_with($adminTarget, $adminRoot . '/')
-        || !is_file($adminTarget)
-    ) {
-        require __DIR__ . '/404.php';
-        exit;
-    }
-
-    // Parse query string from REQUEST_URI since nginx may not pass it correctly during rewrite
-    $adminQueryString = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
-    if ($adminQueryString !== null && $adminQueryString !== '') {
-        $_SERVER['QUERY_STRING'] = $adminQueryString;
-        parse_str($adminQueryString, $parsedQuery);
-        $_GET = array_merge($_GET, $parsedQuery);
-    }
-
-    require $adminTarget;
-    exit;
-}
 
 $queryString = $_SERVER['QUERY_STRING'] ?? '';
 $cacheKey = $queryString !== '' ? $requestPathWithSlash . '?' . $queryString : $requestPathWithSlash;
@@ -70,6 +37,12 @@ if (!cache_should_bypass($config)) {
     });
 }
 
+// Block direct access to raw markdown files.
+if (str_ends_with($requestPath, '.md')) {
+    require __DIR__ . '/404.php';
+    exit;
+}
+
 $customRoutes = parse_custom_routes((string) ($config['custom_routes'] ?? ''));
 foreach ($customRoutes as $customRoute) {
     if (($customRoute['path'] ?? '') !== $requestPathWithSlash) {
@@ -82,7 +55,7 @@ foreach ($customRoutes as $customRoute) {
     }
 
     $fontStack = font_stack_css($config['theme']['font_stack'] ?? 'sans');
-    $pageTitle = $config['site_title'] ?? 'Page';
+    $pageTitle = $config['site_title'] ?? t('frontend.site_title_fallback');
     $metaDescription = $config['site_description'] ?? '';
     $post = null;
     $page = null;
@@ -98,7 +71,6 @@ $reservedPaths = [
     'post.php',
     'setup.php',
     'page.php',
-    'search.php',
 ];
 $isSingle = !$isTag && $requestPath !== ''
     && !str_contains($requestPath, '.')
@@ -114,8 +86,8 @@ $tagSlug = $isTag ? normalize_tag($tagParam) : '';
 $tagPosts = [];
 if ($isTag && $tagSlug !== '') {
     $tagIndex = load_tag_index();
-    if ($tagIndex !== null && isset($tagIndex[$tagSlug]) && is_array($tagIndex[$tagSlug])) {
-        $slugLookup = array_fill_keys($tagIndex[$tagSlug], true);
+    if ($tagIndex !== null && isset($tagIndex[$tagSlug]) && is_array($tagIndex[$tagSlug]['posts'] ?? null)) {
+        $slugLookup = array_fill_keys($tagIndex[$tagSlug]['posts'], true);
         $tagPosts = array_values(array_filter(get_all_posts(false), function (array $post) use ($slugLookup): bool {
             return isset($slugLookup[$post['slug'] ?? '']);
         }));
@@ -137,7 +109,7 @@ $blogFeedHidden = ($blogPageSlug === '__hidden__');
 
 if ($isSingle && $homepageSlug !== '' && $requestPath === $homepageSlug) {
     $queryString = $_SERVER['QUERY_STRING'] ?? '';
-    $location = '/' . ($queryString !== '' ? ('?' . $queryString) : '');
+    $location = base_path() . '/' . ($queryString !== '' ? ('?' . $queryString) : '');
     header('Location: ' . $location);
     exit;
 }
@@ -145,9 +117,8 @@ if (!$isTag && $requestPath === '' && $homepageSlug !== '') {
     $homepage = get_page_by_slug($homepageSlug, true);
     if ($homepage) {
         $page = $homepage;
-        $hidePageTitle = !empty($config['hide_homepage_title']);
         $fontStack = font_stack_css($config['theme']['font_stack'] ?? 'sans');
-        $pageTitle = $page['title'] ?? 'Page not found';
+        $pageTitle = $page['title'] ?? t('frontend.page_not_found');
         $metaDescription = !empty($page['description']) ? $page['description'] : '';
         require __DIR__ . '/page.php';
         exit;
@@ -176,14 +147,14 @@ if ($isSingle) {
     if ($pageData) {
         $page = $pageData;
         $fontStack = font_stack_css($config['theme']['font_stack'] ?? 'sans');
-        $pageTitle = $page['title'] ?? 'Page not found';
+        $pageTitle = $page['title'] ?? t('frontend.page_not_found');
         $metaDescription = !empty($page['description']) ? $page['description'] : '';
         require __DIR__ . '/page.php';
     } else {
         $post = $post ?? null;
         if ($post) {
             $fontStack = font_stack_css($config['theme']['font_stack'] ?? 'sans');
-            $pageTitle = $post['title'] ?? 'Post not found';
+            $pageTitle = $post['title'] ?? t('frontend.post_not_found');
             $metaDescription = !empty($post['description']) ? $post['description'] : '';
             require __DIR__ . '/post.php';
         } else {
@@ -214,12 +185,12 @@ $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
         <?php if ($isTag): ?>
             <h1 ><?= e($tagParam !== '' ? 'Tag: ' . $tagParam : 'Tags') ?></h1>
             <?php if ($tagSlug === ''): ?>
-                <p>No tag selected.</p>
+                <p><?= e(t('frontend.no_tag_selected')) ?></p>
             <?php elseif (!$allPosts): ?>
-                <p>No posts found for this tag.</p>
+                <p><?= e(t('frontend.no_posts_for_tag')) ?></p>
             <?php else: ?>
                 <?php
-                $paginationBase = '/tag/' . rawurlencode($tagSlug);
+                $paginationBase = base_path() . '/tag/' . rawurlencode($tagSlug);
                 require __DIR__ . '/includes/post-list.php';
                 ?>
             <?php endif; ?>
@@ -228,7 +199,7 @@ $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
             <!-- Home page list view -->
             <?php if (!$blogFeedHidden): ?>
                 <?php
-                $paginationBase = '/';
+                $paginationBase = base_path() . '/';
                 require __DIR__ . '/includes/post-list.php';
                 ?>
             <?php endif; ?>
