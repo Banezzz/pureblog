@@ -14,8 +14,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 verify_csrf();
+
+// Capture custom admin path before destroying session
+$customPath = custom_admin_path();
+$loginUrl = $customPath !== ''
+    ? base_path() . '/' . $customPath . '/'
+    : base_path() . '/admin/index.php';
+
 $_SESSION = [];
 session_destroy();
 
-header('Location: ' . base_path() . '/admin/index.php');
+header('Location: ' . $loginUrl);
 exit;
