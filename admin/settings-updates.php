@@ -20,7 +20,7 @@ $fontStack = font_stack_css($config['theme']['admin_font_stack'] ?? 'sans');
  */
 function fetch_latest_pureblog_release(): array
 {
-    $endpoint = 'https://api.github.com/repos/kevquirk/pureblog/releases/latest';
+    $endpoint = 'https://api.github.com/repos/Banezzz/pureblog/releases/latest';
     $headers = [
         'User-Agent: Pureblog-Updates-Check',
         'Accept: application/vnd.github+json',
@@ -72,7 +72,7 @@ function fetch_latest_pureblog_release(): array
         'ok' => true,
         'tag' => (string) ($json['tag_name'] ?? ''),
         'name' => (string) ($json['name'] ?? ''),
-        'url' => (string) ($json['html_url'] ?? 'https://github.com/kevquirk/pureblog/releases'),
+        'url' => (string) ($json['html_url'] ?? 'https://github.com/Banezzz/pureblog/releases'),
         'zipball_url' => (string) ($json['zipball_url'] ?? ''),
         'published_at' => (string) ($json['published_at'] ?? ''),
     ];
@@ -766,7 +766,7 @@ function repair_missing_lang(): array
 {
     $currentVersion = detect_current_pureblog_version();
     $tag = 'v' . ltrim($currentVersion, 'v');
-    $endpoint = 'https://api.github.com/repos/kevquirk/pureblog/releases/tags/' . urlencode($tag);
+    $endpoint = 'https://api.github.com/repos/Banezzz/pureblog/releases/tags/' . urlencode($tag);
     $headers = ['User-Agent: Pureblog-Updates-Check', 'Accept: application/vnd.github+json'];
 
     if (function_exists('curl_init')) {
@@ -932,7 +932,7 @@ require __DIR__ . '/../includes/admin-head.php';
                     (<code><?= e($latestBackup) ?></code>)
                 </p>
             <?php endif; ?>
-            <p><strong><?= e(t('admin.settings.updates.repository')) ?></strong> <a href="https://github.com/kevquirk/pureblog" target="_blank" rel="noopener noreferrer">github.com/kevquirk/pureblog</a></p>
+            <p><strong><?= e(t('admin.settings.updates.repository')) ?></strong> <a href="https://github.com/Banezzz/pureblog" target="_blank" rel="noopener noreferrer">github.com/Banezzz/pureblog</a></p>
             <p>
                 <a class="button" href="<?= base_path() ?>/admin/settings-updates.php?check=1">
                     <svg class="icon" aria-hidden="true"><use href="#icon-upgrade"></use></svg>
@@ -953,7 +953,7 @@ require __DIR__ . '/../includes/admin-head.php';
                 <?php if (($latest['published_at'] ?? '') !== ''): ?>
                     <p><strong><?= e(t('admin.settings.updates.published')) ?></strong> <?= e(format_datetime_for_display((string) $latest['published_at'], $config, 'Y-m-d')) ?></p>
                 <?php endif; ?>
-                <p><a href="<?= e($latest['url'] ?? 'https://github.com/kevquirk/pureblog/releases') ?>" target="_blank" rel="noopener noreferrer"><?= e(t('admin.settings.updates.view_release_notes')) ?></a></p>
+                <p><a href="<?= e($latest['url'] ?? 'https://github.com/Banezzz/pureblog/releases') ?>" target="_blank" rel="noopener noreferrer"><?= e(t('admin.settings.updates.view_release_notes')) ?></a></p>
             <?php endif; ?>
         </section>
 

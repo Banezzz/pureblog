@@ -152,7 +152,7 @@ if ($cacheAge > 21600) {
         'header'  => "User-Agent: Pureblog-Dashboard\r\nAccept: application/vnd.github+json\r\n",
         'ignore_errors' => true,
     ]]);
-    $json = @file_get_contents('https://api.github.com/repos/kevquirk/pureblog/releases/latest', false, $ctx);
+    $json = @file_get_contents('https://api.github.com/repos/Banezzz/pureblog/releases/latest', false, $ctx);
     if (is_string($json)) {
         $data = @json_decode($json, true);
         if (is_array($data) && isset($data['tag_name']) && is_string($data['tag_name'])) {
