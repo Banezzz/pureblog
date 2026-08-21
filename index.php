@@ -65,15 +65,25 @@ foreach ($customRoutes as $customRoute) {
 }
 
 $isTag = str_starts_with($requestPath, 'tag/');
+$isArchive = $requestPath === 'archive' || str_starts_with($requestPath, 'archive/');
 $tagParam = $isTag ? rawurldecode(substr($requestPath, 4)) : '';
+$archiveYear = '';
+if ($isArchive && $requestPath !== 'archive') {
+    $archiveYear = trim(substr($requestPath, strlen('archive/')), '/');
+    if ($archiveYear !== '' && !preg_match('/^\d{4}$/', $archiveYear)) {
+        require __DIR__ . '/404.php';
+        exit;
+    }
+}
 $reservedPaths = [
     '',
     'index.php',
     'post.php',
     'setup.php',
     'page.php',
+    'archive',
 ];
-$isSingle = !$isTag && $requestPath !== ''
+$isSingle = !$isTag && !$isArchive && $requestPath !== ''
     && !str_contains($requestPath, '.')
     && !in_array($requestPath, $reservedPaths, true)
     && !str_starts_with($requestPath, 'admin/')
@@ -165,16 +175,31 @@ if ($isSingle) {
     exit;
 }
 
-// List views (home + tag) with pagination.
+// List views (home + tag + year archive) with pagination.
 $perPage = (int) ($config['posts_per_page'] ?? 20);
 $currentPage = (int) ($_GET['page'] ?? 1);
-$allPosts = $isTag ? $tagPosts : get_all_posts(false);
+$archiveGroups = $isArchive ? get_posts_grouped_by_year(false) : [];
+if ($isArchive && $archiveYear !== '') {
+    $allPosts = $archiveGroups[$archiveYear] ?? [];
+} elseif ($isTag) {
+    $allPosts = $tagPosts;
+} else {
+    $allPosts = get_all_posts(false);
+}
 $pagination = paginate_posts($allPosts, $perPage, $currentPage);
 $posts = $pagination['posts'];
 $totalPages = $pagination['totalPages'];
 $currentPage = $pagination['currentPage'];
 $fontStack = font_stack_css($config['theme']['font_stack'] ?? 'sans');
-$pageTitle = $isTag && $tagParam !== '' ? 'Tag: ' . $tagParam : $config['site_title'];
+if ($isArchive) {
+    $pageTitle = $archiveYear !== ''
+        ? t('frontend.archive_year', ['year' => $archiveYear])
+        : t('frontend.archive_heading');
+} elseif ($isTag && $tagParam !== '') {
+    $pageTitle = 'Tag: ' . $tagParam;
+} else {
+    $pageTitle = $config['site_title'];
+}
 $metaDescription = '';
 $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
 
@@ -182,8 +207,29 @@ $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
 <?php if ($__p = find_include('header')) require $__p; ?>
 <?php render_masthead_layout($config, ['post' => $post ?? null, 'page' => $page ?? null]); ?>
     <main>
-        <!-- Tag archive view -->
-        <?php if ($isTag): ?>
+        <?php if ($isArchive): ?>
+            <h1><?= e($archiveYear !== '' ? t('frontend.archive_year', ['year' => $archiveYear]) : t('frontend.archive_heading')) ?></h1>
+            <?php if ($archiveYear !== ''): ?>
+                <p><a href="<?= e(base_path() . '/archive') ?>"><?= e(t('frontend.archive_all_years')) ?></a></p>
+                <?php if (!$allPosts): ?>
+                    <p><?= e(t('frontend.archive_empty_year')) ?></p>
+                <?php else: ?>
+                    <?php
+                    $paginationBase = base_path() . '/archive/' . rawurlencode($archiveYear);
+                    $postListLayout = 'archive';
+                    if ($__p = find_include('post-list')) require $__p;
+                    ?>
+                <?php endif; ?>
+            <?php elseif ($archiveGroups === []): ?>
+                <p><?= e(t('frontend.no_posts')) ?></p>
+            <?php else: ?>
+                <?php foreach ($archiveGroups as $year => $yearPosts): ?>
+                    <?php if ($year === '0000') { continue; } ?>
+                    <h2><a href="<?= e(base_path() . '/archive/' . rawurlencode((string) $year)) ?>"><?= e((string) $year) ?></a></h2>
+                    <p class="archive-year-count"><?= e(t('frontend.archive_count', ['n' => count($yearPosts)])) ?></p>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        <?php elseif ($isTag): ?>
             <h1 ><?= e($tagParam !== '' ? 'Tag: ' . $tagParam : 'Tags') ?></h1>
             <?php if ($tagSlug === ''): ?>
                 <p><?= e(t('frontend.no_tag_selected')) ?></p>

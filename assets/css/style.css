@@ -710,6 +710,11 @@ button:disabled:hover {
     padding-left: 1.25rem;
 }
 
+.archive-year-count {
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
 .post-nav p {
     padding: 1rem 0;
 }

@@ -252,3 +252,19 @@ function render_related_posts(array $posts): string
 
     return $out;
 }
+
+function get_posts_grouped_by_year(bool $includeDrafts = false): array
+{
+    $grouped = [];
+    foreach (get_all_posts($includeDrafts) as $post) {
+        $date = (string) ($post['date'] ?? '');
+        $year = $date !== '' ? substr($date, 0, 4) : '0000';
+        if (!preg_match('/^\d{4}$/', $year)) {
+            $year = '0000';
+        }
+        $grouped[$year][] = $post;
+    }
+    krsort($grouped);
+
+    return $grouped;
+}

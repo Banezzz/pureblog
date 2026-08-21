@@ -55,6 +55,11 @@ return [
         'reading_time'          => '{n} min read',
         'toc_heading'           => 'Contents',
         'related_posts'         => 'Related posts',
+        'archive_heading'       => 'Archive',
+        'archive_year'          => 'Archive: {year}',
+        'archive_all_years'     => 'All years',
+        'archive_empty_year'    => 'No posts found for this year.',
+        'archive_count'         => '{n} posts',
     ],
 
     // -------------------------------------------------------------------------
