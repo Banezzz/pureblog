@@ -48,34 +48,16 @@ Posts live in `content/posts` and pages live in `content/pages`. Uploaded images
 
 ## Upgrading from v2.x to v3.x
 
-v3.0 restructured the core and cannot be applied with the old in-app updater. Treat this as a manual upgrade.
+v3 restructured the core and cannot be applied with the old in-app updater. Treat this as a manual upgrade.
 
-### Data preservation
+The full production playbook — written so a coding agent can run the upgrade on a live server — is **[docs/upgrade-v2-to-v3.md](docs/upgrade-v2-to-v3.md)**. Use that document, not the in-app updater, for the jump to `v3.7.2-custom`.
 
-Upload the new code files but **do not overwrite** these directories — they contain your data:
+Short version:
 
-- `config/` — site configuration and credentials
-- `content/posts/` — blog posts
-- `content/pages/` — pages
-- `content/images/` — uploaded images
-- `content/css/` — custom CSS
-- `data/` — runtime data
-- `backup/` — backups
-
-Keep any custom rules you added to the root `.htaccess`.
-
-### After upgrading
-
-1. Log in again. Remember-me cookies from v2.x are invalid.
-2. If search results look empty, edit and save any post, or run: `php -r "require 'functions.php'; build_search_index(); echo 'done';"`
-3. Review Settings → Site for new options (reading time, table of contents, related posts, JSON-LD, comments).
-4. If you use a custom admin path, enter through that path after the upgrade.
-
-### Removed / replaced files
-
-These v2.x files are gone in 3.x and can be deleted if they are still on the server:
-
-- `admin/pages.php`
-- `admin/delete-post.php`
-- `admin/delete-page.php` (replaced by `admin/delete-content.php`)
-- `config/hooks-example.php`
+- Do **not** overwrite `config/`, `content/posts/`, `content/pages/`, `content/images/`, `content/css/`, `data/`, or `backup/`.
+- Keep any custom rules you added to the root `.htaccess`.
+- Delete leftover v2 files: `admin/pages.php`, `admin/delete-post.php`, `admin/delete-page.php`, `config/hooks-example.php`.
+- Log in again. Remember-me cookies from v2.x are invalid.
+- If search looks empty, rebuild the index: `php -r "require 'functions.php'; build_search_index(); echo 'done';"`
+- Review Settings → Site (reading time, table of contents, related posts, JSON-LD).
+- If you use a custom admin path, enter through that path after the upgrade.
