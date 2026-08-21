@@ -5,7 +5,6 @@ declare(strict_types=1);
 require __DIR__ . '/functions.php';
 
 require_setup_redirect();
-send_security_headers();
 
 // Basic request parsing + route flags.
 $config = load_config();
@@ -16,46 +15,6 @@ if ($bp !== '' && str_starts_with($requestUriPath, $bp)) {
 }
 $requestPath = trim(rawurldecode($requestUriPath), '/');
 $requestPathWithSlash = $requestPath === '' ? '/' : ('/' . $requestPath);
-
-// Custom admin path routing: route /<custom-path>/... to /admin/...
-$customAdminPath = custom_admin_path();
-if ($customAdminPath !== '' && ($requestPath === $customAdminPath || str_starts_with($requestPath, $customAdminPath . '/'))) {
-    $adminRelativePath = $requestPath === $customAdminPath
-        ? 'index.php'
-        : substr($requestPath, strlen($customAdminPath) + 1);
-    $adminRelativePath = trim((string) $adminRelativePath, '/');
-    if ($adminRelativePath === '') {
-        $adminRelativePath = 'index.php';
-    }
-    if (!str_ends_with($adminRelativePath, '.php')) {
-        $adminRelativePath .= '.php';
-    }
-
-    $adminRoot = realpath(__DIR__ . '/admin');
-    $adminTarget = realpath(__DIR__ . '/admin/' . $adminRelativePath);
-    if (
-        $adminRoot === false
-        || $adminTarget === false
-        || !str_starts_with($adminTarget, $adminRoot . '/')
-        || !is_file($adminTarget)
-    ) {
-        require __DIR__ . '/404.php';
-        exit;
-    }
-
-    // Preserve query string
-    $adminQueryString = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
-    if ($adminQueryString !== null && $adminQueryString !== '') {
-        $_SERVER['QUERY_STRING'] = $adminQueryString;
-        parse_str($adminQueryString, $parsedQuery);
-        $_GET = array_merge($_GET, $parsedQuery);
-    }
-
-    // Mark this request as routed through the custom path
-    $GLOBALS['__pureblog_custom_admin_routed'] = true;
-    require $adminTarget;
-    exit;
-}
 
 $queryString = $_SERVER['QUERY_STRING'] ?? '';
 $cacheKey = $queryString !== '' ? $requestPathWithSlash . '?' . $queryString : $requestPathWithSlash;
@@ -115,10 +74,10 @@ $reservedPaths = [
 $isSingle = !$isTag && $requestPath !== ''
     && !str_contains($requestPath, '.')
     && !in_array($requestPath, $reservedPaths, true)
-    && !str_starts_with($requestPath, 'admin')
-    && !str_starts_with($requestPath, 'assets')
-    && !str_starts_with($requestPath, 'content')
-    && !str_starts_with($requestPath, 'config');
+    && !str_starts_with($requestPath, 'admin/')
+    && !str_starts_with($requestPath, 'assets/')
+    && !str_starts_with($requestPath, 'content/')
+    && !str_starts_with($requestPath, 'config/');
 
 $pageData = $isSingle ? get_page_by_slug($requestPath, false) : null;
 $post = $isSingle && !$pageData ? get_post_by_slug($requestPath, false) : null;
@@ -171,10 +130,10 @@ if (
     && $requestPath !== ''
     && str_contains($requestPath, '.')
     && !in_array($requestPath, $reservedPaths, true)
-    && !str_starts_with($requestPath, 'admin')
-    && !str_starts_with($requestPath, 'assets')
-    && !str_starts_with($requestPath, 'content')
-    && !str_starts_with($requestPath, 'config')
+    && !str_starts_with($requestPath, 'admin/')
+    && !str_starts_with($requestPath, 'assets/')
+    && !str_starts_with($requestPath, 'content/')
+    && !str_starts_with($requestPath, 'config/')
     && !is_file(__DIR__ . '/' . $requestPath)
 ) {
     require __DIR__ . '/404.php';
@@ -218,7 +177,7 @@ $metaDescription = '';
 $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
 
 ?>
-<?php require __DIR__ . '/includes/header.php'; ?>
+<?php if ($__p = find_include('header')) require $__p; ?>
 <?php render_masthead_layout($config, ['post' => $post ?? null, 'page' => $page ?? null]); ?>
     <main>
         <!-- Tag archive view -->
@@ -231,7 +190,7 @@ $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
             <?php else: ?>
                 <?php
                 $paginationBase = base_path() . '/tag/' . rawurlencode($tagSlug);
-                require __DIR__ . '/includes/post-list.php';
+                if ($__p = find_include('post-list')) require $__p;
                 ?>
             <?php endif; ?>
         <?php else: ?>
@@ -240,7 +199,7 @@ $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
             <?php if (!$blogFeedHidden): ?>
                 <?php
                 $paginationBase = base_path() . '/';
-                require __DIR__ . '/includes/post-list.php';
+                if ($__p = find_include('post-list')) require $__p;
                 ?>
             <?php endif; ?>
         <?php endif; ?>
