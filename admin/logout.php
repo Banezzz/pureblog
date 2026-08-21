@@ -6,6 +6,7 @@ require __DIR__ . '/../functions.php';
 require_setup_redirect();
 
 start_admin_session();
+guard_admin_path();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -17,8 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 verify_csrf();
 clear_remember_me_cookie();
+$loginUrl = admin_login_url();
 $_SESSION = [];
 session_destroy();
 
-header('Location: ' . base_path() . '/admin/index.php');
+header('Location: ' . $loginUrl);
 exit;

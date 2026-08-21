@@ -16,6 +16,8 @@ if ($bp !== '' && str_starts_with($requestUriPath, $bp)) {
 $requestPath = trim(rawurldecode($requestUriPath), '/');
 $requestPathWithSlash = $requestPath === '' ? '/' : ('/' . $requestPath);
 
+route_custom_admin_request($requestPath);
+
 $queryString = $_SERVER['QUERY_STRING'] ?? '';
 $cacheKey = $queryString !== '' ? $requestPathWithSlash . '?' . $queryString : $requestPathWithSlash;
 if (!cache_should_bypass($config)) {
