@@ -24,11 +24,11 @@ if (isset($_GET['package_plan'])) {
         $latestTag = (string) ($latest['tag'] ?? '');
         $currentVersion = detect_current_pureblog_version();
 
-        if ($latestTag !== '' && versions_match($currentVersion, $latestTag)) {
+        if ($latestTag !== '' && !is_newer_release($latestTag, $currentVersion)) {
             $packagePlan = [
                 'ok' => true,
                 'already_latest' => true,
-                'message' => t('admin.settings.updates.already_latest_version', ['tag' => $latestTag]),
+                'message' => t('admin.settings.updates.already_latest_version', ['tag' => $currentVersion]),
             ];
         } else {
             $packagePlan = build_package_upgrade_plan((string) ($latest['zipball_url'] ?? ''));
@@ -47,6 +47,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !isset($_POST['admin_act
             $applyResult = [
                 'ok' => false,
                 'error' => (string) ($latestForApply['error'] ?? t('admin.settings.updates.error_release_metadata')),
+            ];
+        } elseif (!is_newer_release((string) ($latestForApply['tag'] ?? ''), detect_current_pureblog_version())) {
+            $applyResult = [
+                'ok' => true,
+                'already_latest' => true,
+                'message' => t('admin.settings.updates.already_latest_version', ['tag' => detect_current_pureblog_version()]),
             ];
         } else {
             $applyResult = apply_release_update(
@@ -126,7 +132,7 @@ require __DIR__ . '/../includes/admin-head.php';
                 <?php
                 $latestTag = (string) ($latest['tag'] ?? '');
                 $currentVersion = detect_current_pureblog_version();
-                $updateAvailable = ($latestTag !== '' && $currentVersion !== 'unknown' && !versions_match($currentVersion, $latestTag));
+                $updateAvailable = ($latestTag !== '' && $currentVersion !== 'unknown' && is_newer_release($latestTag, $currentVersion));
                 $displayLatestVersion = ltrim($latestTag, 'v');
                 ?>
                 <?php if ($updateAvailable): ?>

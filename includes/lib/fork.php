@@ -107,3 +107,18 @@ function route_custom_admin_request(string $requestPath): void
     require $adminTarget;
     exit;
 }
+
+function is_newer_release(string $latest, string $current): bool
+{
+    if (versions_match($current, $latest)) {
+        return false;
+    }
+
+    $latestCore = preg_replace('/[^0-9.].*/', '', ltrim(strtolower(trim($latest)), 'v')) ?? '';
+    $currentCore = preg_replace('/[^0-9.].*/', '', ltrim(strtolower(trim($current)), 'v')) ?? '';
+    if ($latestCore === '' || $currentCore === '') {
+        return !versions_match($current, $latest);
+    }
+
+    return version_compare($latestCore, $currentCore, '>');
+}
