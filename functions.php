@@ -75,6 +75,7 @@ function default_config(): array
         'date_format' => 'F j, Y',
         'admin_username' => '',
         'admin_password_hash' => '',
+        'admin_path' => '',
         'cache' => [
             'enabled' => true,
             'rss_ttl' => 3600,
@@ -139,6 +140,7 @@ require __DIR__ . '/includes/lib/content.php';
 require __DIR__ . '/includes/lib/auth.php';
 require __DIR__ . '/includes/lib/template.php';
 require __DIR__ . '/includes/lib/cache.php';
+require __DIR__ . '/includes/lib/fork.php';
 
 
 $_userFunctions = PUREBLOG_BASE_PATH . '/content/functions.php';
