@@ -1,5 +1,7 @@
 <?php
 
+// New additions to this language file may have English placeholder values.
+// These are marked with "ENGLISH PLACEHOLDER" and should be reviewed by a native speaker.
 
 return [
 
@@ -53,7 +55,10 @@ return [
         'page_not_found'        => 'Seite nicht gefunden',
         'page_not_found_detail' => 'Die angeforderte Seite konnte nicht gefunden werden.',
         'no_tag_selected'       => 'Kein Tag ausgewählt.',
-        'no_posts_for_tag'      => 'Keine Beiträge für diesen Tag gefunden.',
+        'no_posts_for_tag'      => 'Keine Beiträge für dieses Tag gefunden.',
+        'edit_post'             => 'Beitrag bearbeiten',
+        'edit_page'             => 'Seite bearbeiten',
+        'reading_time'          => '{n} min Lesezeit',
     ],
 
 
@@ -72,6 +77,7 @@ return [
             'log_out'       => 'Abmelden',
             'cache_cleared' => 'Cache geleert.',
             'invalid_action'=> 'Ungültige Admin-Aktion.',
+            'images'        => 'Bilder',
         ],
 
 
@@ -81,6 +87,7 @@ return [
             'setup_complete' => 'Einrichtung abgeschlossen. Anmelden, um fortzufahren.',
             'username'       => 'Benutzername',
             'password'       => 'Passwort',
+            'remember_me'    => 'Angemeldet bleiben',
             'submit'         => 'Anmelden',
             'error_invalid'  => 'Ungültige Anmeldedaten.',
             'error_lockout'  => 'Zu viele ungültige Versuche. Versuch es in {minutes} Minute(n) erneut.',
@@ -144,6 +151,8 @@ return [
             'filter_all_tags'       => 'Alle Tags',
             'filter_status'         => 'Status',
             'filter_all_statuses'   => 'Alle',
+            'filter_layout'         => 'Layout',
+            'filter_all_layouts'    => 'Alle Layouts',
             'filter_apply'          => 'Anwenden',
             'filter_active'         => 'Gefiltert nach: {label}.',
             'filter_clear'          => 'Zurücksetzen',
@@ -152,8 +161,8 @@ return [
             'notice_post_deleted'   => 'Beitrag gelöscht.',
             'notice_page_saved'     => 'Seite gespeichert.',
             'notice_page_deleted'   => 'Seite gelöscht.',
-            'pagination_newer'      => '← Neuere Beiträge',
-            'pagination_older'      => 'Ältere Beiträge →',
+            'pagination_newer'      => '⬅ Neuere Beiträge',
+            'pagination_older'      => 'Ältere Beiträge ➡',
             'new_page'              => 'Neue Seite',
             'no_pages'              => 'Noch keine Seiten.',
         ],
@@ -167,6 +176,7 @@ return [
             'date_label'            => 'Datum',
             'status_label'          => 'Status',
             'status_draft'          => 'Entwurf',
+            'status_scheduled'      => 'Geplant',
             'status_published'      => 'Veröffentlicht',
             'images_title'          => 'Bilder',
             'no_images'             => 'Noch keine Bilder.',
@@ -221,14 +231,31 @@ return [
             'js_copy_failed'  => 'Kopieren fehlgeschlagen. Bitte manuell kopieren.',
             'js_save_post_first'  => 'Beitrag zuerst speichern, damit er einen Slug und ein Datum hat.',
             'js_save_page_first'  => 'Seite zuerst speichern, damit sie einen Slug hat.',
-            'js_upload_failed'  => 'Bild-Upload fehlgeschlagen.',
+            'js_upload_failed'           => 'Bild-Upload fehlgeschlagen.',
+            'feature_image'              => 'Titelbild',
+            'js_feature_image_confirm'   => 'Das aktuelle Titelbild durch „{filename}“ ersetzen?',
+            'js_feature_image_failed'    => 'Aktualisieren des Titelbilds fehlgeschlagen.',
         ],
 
-
+        'images' => [
+            'page_title'         => 'Bilder - Pure-Blog-Verwaltung',
+            'heading'            => 'Bilder',
+            'no_images'          => 'Noch keine Bilder hochgeladen.',
+            'search_label'       => 'Bilder suchen',
+            'search_placeholder' => 'Nach Dateiname suchen …',
+            'clear_search'       => 'Suche löschen',
+            'deleted'            => 'Bild gelöscht.',
+            'delete_confirm'     => 'Dieses Bild löschen?',
+            'delete_used_warning'=> 'Dieses Bild wird im folgenden Inhalt verwendet. Sie sollten es entfernen, um defekte Links zu vermeiden.',
+            'delete_anyway'      => 'Trotzdem löschen',
+            'cancel'             => 'Abbrechen',
+            'slug_label'         => 'Ordner:',
+            'error_delete'       => 'Konnte Bild nicht löschen.',
+            'pagination_prev'    => '⬅ Vorherige',
+            'pagination_next'    => 'Nächste ➡',
+        ],
 
         'notices' => [
-            'lang_missing'        => 'Sprachdateien fehlen — dies kann nach einem Update von 1.9.7 passieren.',
-            'lang_missing_repair' => 'Hier klicken, um automatisch zu reparieren',
         ],
 
         'post_editor' => [
@@ -329,6 +356,7 @@ return [
                 'language'           => 'Sprache',
                 'timezone'           => 'Zeitzone',
                 'date_format'        => 'Datumsformat',
+                'show_reading_time'  => 'Lesezeit bei Beiträgen anzeigen',
                 'homepage'           => 'Startseite',
                 'blog_page'          => 'Blog-Seite',
                 'base_url'           => 'Basis-URL',
@@ -338,6 +366,7 @@ return [
                 'og_banner'          => 'Banner (Standard)',
                 'og_square'          => 'Quadratisch',
                 'custom_nav'         => 'Benutzerdefinierte Navigationseinträge',
+                'custom_nav_only'    => 'Gesamte Navigation durch benutzerdefinierte Einträge ersetzen',
                 'custom_routes'      => 'Benutzerdefinierte Routen',
                 'homepage_default'   => 'Blog-Beiträge (Standard)',
                 'blog_use_homepage'  => 'Startseite verwenden',
@@ -347,6 +376,7 @@ return [
                 'admin_homepage_dashboard'  => 'Dashboard',
                 'admin_homepage_content'    => 'Inhalte',
                 'admin_hide_dashboard'      => 'Dashboard aus der Navigation ausblenden',
+                'enable_blog_posts'         => 'Blog-Funktionen aktivieren (Beiträge, Tags, Statistiken)',
                 'cache_section'      => 'Cache',
                 'cache_enable'       => 'Seiten-Cache aktivieren',
                 'rss_ttl'            => 'RSS-Cache-Dauer',
@@ -378,9 +408,16 @@ return [
                 'tip_date_format_link'   => 'PHP-Datumsformat-Dokumentation',
                 'tip_favicon'            => '512 Pixel quadratisch funktioniert am besten',
                 'tip_og_image'           => '1.360 × 712 für Banner oder 1.200 × 1.200 für quadratisch',
+                'tip_og_image_dynamic'   => 'Freilassen, um dynamisch generierte Open-Graph-Banner zu verwenden.',
+                'tip_og_image_doc_link'  => 'Dokumentation lesen',
                 'tip_one_per_line'       => 'eine pro Zeile',
                 'tip_optional'           => 'optional',
                 'tip_rss_ttl'            => 'Sekunden, 0 zum Deaktivieren',
+                'community_section'      => 'Community',
+                'purecomments_enable'    => 'Enable Pure Comments',
+                'purecomments_url'       => 'Pure Comments URL',
+                'error_purecomments_url' => 'Pure Comments URL is required when Pure Comments is enabled.',
+                'error_purecomments_url_invalid' => 'Pure Comments URL must be a valid URL.',
             ],
 
 
@@ -477,8 +514,10 @@ return [
                 'action_unchanged'      => 'Unverändert:',
                 'action_preserved'      => 'Geschützte Dateien (/config, /content, /data, alle .htaccess-Dateien):',
                 'action_local_only'     => 'Lokale Dateien, die nicht im Upstream-Release enthalten sind (werden gelöscht):',
+                'action_ignore'         => 'Ignoriert (Deine Version wird beibehalten):',
                 'will_add'              => 'Wird hinzugefügt:',
                 'will_replace'          => 'Wird ersetzt:',
+                'will_ignore'           => 'Wird ignoriert (Deine Version wird beibehalten):',
                 'will_delete'           => 'Lokale Dateien, die nicht im Upstream-Release enthalten sind (werden gelöscht):',
                 'apply_update'          => 'Neuestes Update anwenden',
                 'apply_confirm'         => 'Neuestes Update jetzt anwenden? Kerndateien werden ersetzt; /config, /content, /data und alle .htaccess-Dateien bleiben erhalten.',
@@ -499,7 +538,6 @@ return [
                 'notice_update_applied'      => 'Update erfolgreich angewendet.',
                 'notice_backup_restored'     => 'Backup erfolgreich wiederhergestellt.',
                 'notice_backup_deleted'      => 'Backup erfolgreich gelöscht.',
-                'notice_lang_restored'       => 'Sprachdateien erfolgreich wiederhergestellt.',
                 'already_latest_version'     => 'Du verwendest bereits die neueste Version ({tag}).',
                 'error_curl_init'            => 'curl konnte nicht initialisiert werden.',
                 'error_github_request'       => 'GitHub-Anfrage fehlgeschlagen (HTTP {status}).',
@@ -528,10 +566,6 @@ return [
                 'error_choose_delete'        => 'Bitte wähle ein Backup zum Löschen.',
                 'error_release_metadata'     => 'Release-Informationen konnten nicht von GitHub abgerufen werden.',
                 'error_lang_download'        => 'Release-Zip konnte nicht heruntergeladen werden.',
-                'error_lang_zip_open'        => 'Release-Zip konnte nicht geöffnet werden.',
-                'error_lang_zip_extract'     => 'Release-Zip konnte nicht entpackt werden.',
-                'error_lang_dir_missing'     => 'lang/-Verzeichnis nicht im Release-Paket gefunden.',
-                'error_lang_repair'          => 'Sprachreparatur fehlgeschlagen: {error}',
                 'error_build_plan'           => 'Paketplan konnte nicht erstellt werden.',
                 'error_dir_create'           => 'Verzeichnis konnte nicht erstellt werden: {path}',
                 'error_file_copy'            => 'Datei konnte nicht kopiert werden: {path}',

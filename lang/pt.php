@@ -1,5 +1,8 @@
 <?php
 
+// New additions to this language file may have English placeholder values.
+// These are marked with "ENGLISH PLACEHOLDER" and should be reviewed by a native speaker.
+
 return [
 
     'name' => 'Português',
@@ -49,6 +52,9 @@ return [
         'page_not_found_detail' => 'A página que você solicitou não pôde ser encontrada.',
         'no_tag_selected'       => 'Nenhuma etiqueta selecionada.',
         'no_posts_for_tag'      => 'Nenhuma publicação encontrada para esta etiqueta.',
+        'edit_post'             => 'Edit post', // ENGLISH PLACEHOLDER
+        'edit_page'             => 'Edit page', // ENGLISH PLACEHOLDER
+        'reading_time'          => '{n} min read', // ENGLISH PLACEHOLDER
     ],
 
     // -------------------------------------------------------------------------
@@ -65,6 +71,7 @@ return [
             'log_out'       => 'Terminar sessão',
             'cache_cleared' => 'Cache limpa.',
             'invalid_action'=> 'Operação inválida.',
+            'images'        => 'Images', // ENGLISH PLACEHOLDER
         ],
 
         'login' => [
@@ -73,6 +80,7 @@ return [
             'setup_complete' => 'Configuração concluída. Inicia a sessão para continuar.',
             'username'       => 'Nome de utilizador',
             'password'       => 'Palavra-passe',
+            'remember_me'    => 'Lembrar-me',
             'submit'         => 'Iniciar sessão',
             'error_invalid'  => 'Credenciais inválidas.',
             'error_lockout'  => 'Demasiadas tentativas falhadas. Tenta novamente em {minutes} minuto(s).',
@@ -134,6 +142,8 @@ return [
             'filter_all_tags'       => 'Todas as tags',
             'filter_status'         => 'Estado',
             'filter_all_statuses'   => 'Todos',
+            'filter_layout'         => 'Layout', // ENGLISH PLACEHOLDER
+            'filter_all_layouts'    => 'All layouts', // ENGLISH PLACEHOLDER
             'filter_apply'          => 'Aplicar',
             'filter_active'         => 'Filtrado por: {label}.',
             'filter_clear'          => 'Limpar',
@@ -142,8 +152,8 @@ return [
             'notice_post_deleted'   => 'Post deleted.',
             'notice_page_saved'     => 'Page saved.',
             'notice_page_deleted'   => 'Page deleted.',
-            'pagination_newer'      => '← Newer posts',
-            'pagination_older'      => 'Older posts →',
+            'pagination_newer'      => '⬅ Newer posts',
+            'pagination_older'      => 'Older posts ➡',
             'new_page'              => 'New page',
             'no_pages'              => 'No pages yet.',
         ],
@@ -156,6 +166,7 @@ return [
             'date_label'            => 'Data',
             'status_label'          => 'Estado',
             'status_draft'          => 'Rascunho',
+            'status_scheduled'      => 'Scheduled', // ENGLISH PLACEHOLDER
             'status_published'      => 'Publicado',
             'images_title'          => 'Imagens',
             'no_images'             => 'Ainda não há imagens.',
@@ -210,13 +221,31 @@ return [
             'js_copy_failed'  => 'Não foi possível copiar para a área de transferência. Por favor, copie manualmente.',
             'js_save_post_first'  => 'Guarde a publicação primeiro para que tenha um slug e uma data.',
             'js_save_page_first'  => 'Guarde a página primeiro para que tenha um slug.',
-            'js_upload_failed'  => 'Falha ao enviar a imagem.',
+            'js_upload_failed'           => 'Falha ao enviar a imagem.',
+            'feature_image'              => 'Feature image', // ENGLISH PLACEHOLDER
+            'js_feature_image_confirm'   => 'Replace the current feature image with "{filename}"?', // ENGLISH PLACEHOLDER
+            'js_feature_image_failed'    => 'Failed to update feature image.', // ENGLISH PLACEHOLDER
         ],
 
+        'images' => [
+            'page_title'         => 'Images - Pure Blog Admin', // ENGLISH PLACEHOLDER
+            'heading'            => 'Images', // ENGLISH PLACEHOLDER
+            'no_images'          => 'No images uploaded yet.', // ENGLISH PLACEHOLDER
+            'search_label'       => 'Search images', // ENGLISH PLACEHOLDER
+            'search_placeholder' => 'Search by filename…', // ENGLISH PLACEHOLDER
+            'clear_search'       => 'Clear search', // ENGLISH PLACEHOLDER
+            'deleted'            => 'Image deleted.', // ENGLISH PLACEHOLDER
+            'delete_confirm'     => 'Delete this image?', // ENGLISH PLACEHOLDER
+            'delete_used_warning'=> 'This image is being used in the content below. You should remove it to avoid broken links.', // ENGLISH PLACEHOLDER
+            'delete_anyway'      => 'Delete anyway', // ENGLISH PLACEHOLDER
+            'cancel'             => 'Cancel', // ENGLISH PLACEHOLDER
+            'slug_label'         => 'Folder:', // ENGLISH PLACEHOLDER
+            'error_delete'       => 'Unable to delete image.', // ENGLISH PLACEHOLDER
+            'pagination_prev'    => '⬅ Previous', // ENGLISH PLACEHOLDER
+            'pagination_next'    => 'Next ➡', // ENGLISH PLACEHOLDER
+        ],
 
         'notices' => [
-            'lang_missing'        => 'Os ficheiros de idioma estão em falta — isto pode acontecer após uma atualização a partir de 1.9.7.',
-            'lang_missing_repair' => 'Clique aqui para reparar automaticamente',
         ],
 
         'post_editor' => [
@@ -308,6 +337,7 @@ return [
                 'language'            => 'Idioma',
                 'timezone'            => 'Fuso horário',
                 'date_format'         => 'Formato da data',
+                'show_reading_time'  => 'Show reading time on posts', // ENGLISH PLACEHOLDER
                 'homepage'            => 'Página inicial',
                 'blog_page'           => 'Página do blog',
                 'base_url'            => 'URL base',
@@ -317,6 +347,7 @@ return [
                 'og_banner'           => 'Faixa (predefinição)',
                 'og_square'           => 'Quadrado',
                 'custom_nav'          => 'Itens de navegação personalizados',
+                'custom_nav_only'     => 'Substituir toda a navegação por itens personalizados',
                 'custom_routes'       => 'Rotas personalizadas',
                 'homepage_default'    => 'Publicações do blog (predefinida)',
                 'blog_use_homepage'   => 'Usar página inicial',
@@ -326,6 +357,7 @@ return [
                 'admin_homepage_dashboard'  => 'Dashboard',
                 'admin_homepage_content'    => 'Páginas',
                 'admin_hide_dashboard'      => 'Ocultar Dashboard da navegação',
+                'enable_blog_posts'         => 'Habilitar recursos de blog (posts, tags, estatísticas)',
                 'cache_section'       => 'Cache',
                 'cache_enable'        => 'Ativar cache para as páginas',
                 'rss_ttl'             => 'Duração da cache para o RSS',
@@ -357,9 +389,16 @@ return [
                 'tip_date_format_link'=> 'documentação do formato de data em  PHP',
                 'tip_favicon'         => 'quadrado 512px é o ideal',
                 'tip_og_image'        => '1360x712 para faixas, ou 1200x1200 para quadrados',
+                'tip_og_image_dynamic' => 'Deixe em branco para usar banners Open Graph gerados dinamicamente.',
+                'tip_og_image_doc_link'=> 'Ler a documentação',
                 'tip_one_per_line'    => 'um por linha',
                 'tip_optional'        => 'opcional',
                 'tip_rss_ttl'         => 'segundos, 0 para desativar',
+                'community_section'      => 'Community',
+                'purecomments_enable'    => 'Enable Pure Comments',
+                'purecomments_url'       => 'Pure Comments URL',
+                'error_purecomments_url' => 'Pure Comments URL is required when Pure Comments is enabled.',
+                'error_purecomments_url_invalid' => 'Pure Comments URL must be a valid URL.',
             ],
 
             'user' => [
@@ -452,8 +491,10 @@ return [
                 'action_unchanged'      => 'Sem alterações:',
                 'action_preserved'      => 'Ficheiros preservados (/config, /content, /data, todos os ficheiros .htaccess):',
                 'action_local_only'     => 'Ficheiros locais não incluídos na versão upstream (serão eliminados):',
+                'action_ignore'         => 'Ignorado (a sua versão é mantida):',
                 'will_add'              => 'Serão adicionados:',
                 'will_replace'          => 'Serão substituídos:',
+                'will_ignore'           => 'Será ignorado (a sua versão é mantida):',
                 'will_delete'           => 'Ficheiros locais não incluídos na versão upstream (serão eliminados):',
                 'apply_update'          => 'Aplicar última atualização',
                 'apply_confirm'         => 'Aplicar a última atualização agora? Isto vai substituir os ficheiros principais e manter /config, /content, /data e todos os ficheiros .htaccess.',
@@ -474,7 +515,6 @@ return [
                 'notice_update_applied'      => 'Atualização aplicada com sucesso.',
                 'notice_backup_restored'     => 'Cópia de segurança restaurada com sucesso.',
                 'notice_backup_deleted'      => 'Cópia de segurança eliminada com sucesso.',
-                'notice_lang_restored'       => 'Ficheiros de idioma restaurados com sucesso.',
                 'already_latest_version'     => 'Já está na versão mais recente ({tag}).',
                 'error_curl_init'            => 'Impossível inicializar o curl.',
                 'error_github_request'       => 'Pedido ao GitHub falhou (HTTP {status}).',
@@ -503,10 +543,6 @@ return [
                 'error_choose_delete'        => 'Por favor, escolha uma cópia de segurança para eliminar.',
                 'error_release_metadata'     => 'Impossível obter informações da versão do GitHub.',
                 'error_lang_download'        => 'Falha ao transferir o zip da versão.',
-                'error_lang_zip_open'        => 'Falha ao abrir o zip da versão.',
-                'error_lang_zip_extract'     => 'Falha ao extrair o zip da versão.',
-                'error_lang_dir_missing'     => 'Diretório lang/ não encontrado no pacote da versão.',
-                'error_lang_repair'          => 'Reparação de idioma falhada: {error}',
                 'error_build_plan'           => 'Impossível criar o plano do pacote.',
                 'error_dir_create'           => 'Impossível criar diretório: {path}',
                 'error_file_copy'            => 'Impossível copiar ficheiro: {path}',
