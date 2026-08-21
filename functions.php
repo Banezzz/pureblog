@@ -78,6 +78,7 @@ function default_config(): array
         'admin_path' => '',
         'show_toc' => true,
         'show_related_posts' => true,
+        'show_jsonld' => true,
         'cache' => [
             'enabled' => true,
             'rss_ttl' => 3600,

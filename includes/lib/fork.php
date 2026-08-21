@@ -268,3 +268,63 @@ function get_posts_grouped_by_year(bool $includeDrafts = false): array
 
     return $grouped;
 }
+
+function render_jsonld_script(array $config, ?array $post, ?array $page, string $canonicalUrl, string $ogImage): string
+{
+    if (array_key_exists('show_jsonld', $config) && empty($config['show_jsonld'])) {
+        return '';
+    }
+
+    $siteTitle = (string) ($config['site_title'] ?? '');
+    $description = trim((string) ($config['site_description'] ?? ''));
+
+    if (is_array($post)) {
+        $postDescription = trim((string) ($post['description'] ?? ''));
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BlogPosting',
+            'headline' => (string) ($post['title'] ?? $siteTitle),
+            'description' => $postDescription !== '' ? $postDescription : $description,
+            'url' => $canonicalUrl,
+            'mainEntityOfPage' => $canonicalUrl,
+            'datePublished' => (string) ($post['date'] ?? ''),
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => $siteTitle,
+            ],
+        ];
+        if (!empty($post['tags']) && is_array($post['tags'])) {
+            $data['keywords'] = implode(', ', array_map('strval', $post['tags']));
+        }
+    } elseif (is_array($page)) {
+        $pageDescription = trim((string) ($page['description'] ?? ''));
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebPage',
+            'name' => (string) ($page['title'] ?? $siteTitle),
+            'description' => $pageDescription !== '' ? $pageDescription : $description,
+            'url' => $canonicalUrl,
+            'isPartOf' => [
+                '@type' => 'WebSite',
+                'name' => $siteTitle,
+                'url' => get_base_url() . '/',
+            ],
+        ];
+    } else {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'WebSite',
+            'name' => $siteTitle,
+            'description' => $description,
+            'url' => get_base_url() . '/',
+        ];
+    }
+
+    if ($ogImage !== '') {
+        $data['image'] = $ogImage;
+    }
+
+    $data = array_filter($data, static fn($value) => $value !== '' && $value !== null);
+
+    return '<script type="application/ld+json">' . json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . '</script>';
+}

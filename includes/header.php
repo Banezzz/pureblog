@@ -77,6 +77,15 @@ if ($featureImageRaw !== '') {
     $ogLocale = $ogLocaleMap[$config['language'] ?? 'en'] ?? 'en_US';
     ?>
     <meta property="og:locale" content="<?= e($ogLocale) ?>">
+    <meta name="twitter:card" content="<?= $ogImage !== '' ? 'summary_large_image' : 'summary' ?>">
+    <meta name="twitter:title" content="<?= e($fullTitle) ?>">
+    <?php if ($metaDescription !== ''): ?>
+        <meta name="twitter:description" content="<?= e($metaDescription) ?>">
+    <?php endif; ?>
+    <?php if ($ogImage !== ''): ?>
+        <meta name="twitter:image" content="<?= e($ogImage) ?>">
+    <?php endif; ?>
+    <?= render_jsonld_script($config, is_array($post ?? null) ? $post : null, is_array($page ?? null) ? $page : null, $canonicalUrl, $ogImage) . "\n" ?>
     <?php if ($ogImage !== ''): ?>
         <meta property="og:image" content="<?= e($ogImage) ?>">
         <?php if ($isSquareOgImage): ?>

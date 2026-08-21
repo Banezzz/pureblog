@@ -346,6 +346,7 @@ return [
                 'show_reading_time'  => 'Show reading time on posts',
                 'show_toc'           => 'Show a table of contents on long posts',
                 'show_related_posts' => 'Show related posts by tag',
+                'show_jsonld'        => 'Add JSON-LD structured data for search engines',
                 'homepage'           => 'Homepage',
                 'blog_page'          => 'Blog page',
                 'base_url'           => 'Base URL',
