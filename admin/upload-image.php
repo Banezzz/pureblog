@@ -64,10 +64,11 @@ if ($error === '') {
     $filename = preg_replace('/[^a-zA-Z0-9._-]/', '-', $filename) ?? $filename;
     $filename = preg_replace('/-+/', '-', $filename) ?? $filename;
     $filename = trim($filename, '-');
-    $ext = pathinfo($filename, PATHINFO_EXTENSION);
-    if ($ext === '') {
-        $filename .= '.' . $allowedTypes[$mimeType];
+    $baseName = pathinfo($filename, PATHINFO_FILENAME);
+    if ($baseName === '') {
+        $baseName = 'image';
     }
+    $filename = $baseName . '.' . $allowedTypes[$mimeType];
 
     if ($filename === '') {
         $error = t('admin.editor.error_upload_invalid_name');
