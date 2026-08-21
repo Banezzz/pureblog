@@ -54,6 +54,7 @@ return [
         'edit_page'             => 'Edit page',
         'reading_time'          => '{n} min read',
         'toc_heading'           => 'Contents',
+        'related_posts'         => 'Related posts',
     ],
 
     // -------------------------------------------------------------------------
@@ -339,6 +340,7 @@ return [
                 'date_format'        => 'Date format',
                 'show_reading_time'  => 'Show reading time on posts',
                 'show_toc'           => 'Show a table of contents on long posts',
+                'show_related_posts' => 'Show related posts by tag',
                 'homepage'           => 'Homepage',
                 'blog_page'          => 'Blog page',
                 'base_url'           => 'Base URL',

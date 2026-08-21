@@ -185,3 +185,70 @@ function render_post_toc(array $toc): string
 
     return $out;
 }
+
+function get_related_posts(array $post, int $limit = 3): array
+{
+    $slug = (string) ($post['slug'] ?? '');
+    $tags = [];
+    foreach ($post['tags'] ?? [] as $tag) {
+        $normalized = normalize_tag((string) $tag);
+        if ($normalized !== '') {
+            $tags[$normalized] = true;
+        }
+    }
+
+    if ($slug === '' || $tags === []) {
+        return [];
+    }
+
+    $scored = [];
+    foreach (get_all_posts(false) as $candidate) {
+        $candidateSlug = (string) ($candidate['slug'] ?? '');
+        if ($candidateSlug === '' || $candidateSlug === $slug) {
+            continue;
+        }
+
+        $overlap = 0;
+        foreach ($candidate['tags'] ?? [] as $tag) {
+            if (isset($tags[normalize_tag((string) $tag)])) {
+                $overlap++;
+            }
+        }
+        if ($overlap < 1) {
+            continue;
+        }
+
+        $scored[] = [
+            'score' => $overlap,
+            'date' => (string) ($candidate['date'] ?? ''),
+            'post' => $candidate,
+        ];
+    }
+
+    usort($scored, static function (array $left, array $right): int {
+        return $right['score'] <=> $left['score'] ?: strcmp($right['date'], $left['date']);
+    });
+
+    return array_map(static fn(array $row): array => $row['post'], array_slice($scored, 0, $limit));
+}
+
+function render_related_posts(array $posts): string
+{
+    if ($posts === []) {
+        return '';
+    }
+
+    $out = '<section class="related-posts" aria-labelledby="related-posts-heading">';
+    $out .= '<h2 id="related-posts-heading">' . e(t('frontend.related_posts')) . '</h2><ul>';
+    foreach ($posts as $related) {
+        $slug = (string) ($related['slug'] ?? '');
+        $title = (string) ($related['title'] ?? $slug);
+        if ($slug === '') {
+            continue;
+        }
+        $out .= '<li><a href="' . e(base_path() . '/' . $slug) . '">' . e($title) . '</a></li>';
+    }
+    $out .= '</ul></section>';
+
+    return $out;
+}

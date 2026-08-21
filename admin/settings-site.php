@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
     $ogImagePreferred = trim($_POST['og_image_preferred'] ?? 'banner');
     $showReadingTime = !empty($_POST['show_reading_time']);
     $showToc = !empty($_POST['show_toc']);
+    $showRelatedPosts = !empty($_POST['show_related_posts']);
     $cacheEnabled = !empty($_POST['cache_enabled']);
     $rssttl = max(0, (int) ($_POST['rss_ttl'] ?? 3600));
     $adminHomepage = in_array($_POST['admin_homepage'] ?? '', ['dashboard', 'content'], true) ? $_POST['admin_homepage'] : 'dashboard';
@@ -102,6 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
         $config['date_format'] = $dateFormat;
         $config['show_reading_time'] = $showReadingTime;
         $config['show_toc'] = $showToc;
+        $config['show_related_posts'] = $showRelatedPosts;
         $config['base_url'] = $baseUrl;
         $config['homepage_slug'] = $homepageSlug;
         $config['blog_page_slug'] = $blogPageSlug;
@@ -226,6 +228,10 @@ require __DIR__ . '/../includes/admin-head.php';
                 <label class="inline-checkbox" for="show_toc">
                     <input type="checkbox" id="show_toc" name="show_toc"<?= ($config['show_toc'] ?? true) ? ' checked' : '' ?>>
                     <?= e(t('admin.settings.site.show_toc')) ?>
+                </label>
+                <label class="inline-checkbox" for="show_related_posts">
+                    <input type="checkbox" id="show_related_posts" name="show_related_posts"<?= ($config['show_related_posts'] ?? true) ? ' checked' : '' ?>>
+                    <?= e(t('admin.settings.site.show_related_posts')) ?>
                 </label>
 
                 <label for="homepage_slug"><?= e(t('admin.settings.site.homepage')) ?></label>

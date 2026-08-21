@@ -8,6 +8,12 @@ $post = $post ?? [];
     <p class="tag-list"><svg class="icon" aria-hidden="true"><use href="#icon-tag"></use></svg> <?= render_tag_links($post['tags']) ?></p>
 <?php endif; ?>
 
+<?php
+if (($config['show_related_posts'] ?? true) && !empty($post)) {
+    echo render_related_posts(get_related_posts($post));
+}
+?>
+
 <?php if (!empty($config['community']['purecomments_enabled']) && !empty($config['community']['purecomments_url'])): ?>
     <div id="comments" data-post-slug="<?= e((string) ($post['slug'] ?? '')) ?>"></div>
     <script src="<?= e($config['community']['purecomments_url']) ?>/public/embed.js" defer></script>

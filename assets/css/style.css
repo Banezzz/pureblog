@@ -701,6 +701,15 @@ button:disabled:hover {
     margin-left: 1rem;
 }
 
+.related-posts {
+    margin: 2.5rem 0 1rem;
+}
+
+.related-posts ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+}
+
 .post-nav p {
     padding: 1rem 0;
 }
