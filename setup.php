@@ -24,6 +24,7 @@ $values['language'] = trim($_POST['language'] ?? $_GET['lang'] ?? 'en');
 lang_init($values['language']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    verify_csrf();
     $values['site_title'] = trim($_POST['site_title'] ?? '');
     $values['site_tagline'] = trim($_POST['site_tagline'] ?? '');
     $values['language'] = trim($_POST['language'] ?? 'en');
@@ -88,6 +89,7 @@ require __DIR__ . '/includes/admin-head.php';
         <?php endif; ?>
 
         <form method="post">
+            <?= csrf_field() ?>
             <label for="language"><?= e(t('setup.language')) ?></label>
             <select id="language" name="language" onchange="window.location.href='?lang='+encodeURIComponent(this.value)">
                 <?php foreach (lang_available() as $code => $nativeName): ?>
