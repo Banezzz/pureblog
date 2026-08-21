@@ -730,9 +730,9 @@ function apply_release_update(string $zipballUrl, string $releaseTag = ''): arra
 function fetch_latest_pureblog_release(): array
 {
     $result = pureblog_http_get(
-        'https://packages.purecommons.org/blog/latest.json',
-        5,
-        ['User-Agent: Pureblog-Updates-Check', 'Accept: application/json']
+        'https://api.github.com/repos/Banezzz/pureblog/releases/latest',
+        8,
+        ['User-Agent: Pureblog-Updates-Check', 'Accept: application/vnd.github+json']
     );
     if (!$result['ok']) {
         return ['ok' => false, 'error' => $result['error']];
@@ -745,7 +745,7 @@ function fetch_latest_pureblog_release(): array
         'ok'           => true,
         'tag'          => (string) ($json['tag_name'] ?? ''),
         'name'         => (string) ($json['name'] ?? ''),
-        'url'          => (string) ($json['html_url'] ?? 'https://github.com/kevquirk/pureblog/releases'),
+        'url'          => (string) ($json['html_url'] ?? 'https://github.com/Banezzz/pureblog/releases'),
         'zipball_url'  => (string) ($json['zipball_url'] ?? ''),
         'published_at' => (string) ($json['published_at'] ?? ''),
     ];
