@@ -414,6 +414,10 @@ return [
                 'error_username'       => 'Admin username is required.',
                 'error_password_match' => 'New password and confirmation do not match.',
                 'error_password_wrong' => 'Current password is incorrect.',
+                'admin_path'           => 'Custom admin URL path',
+                'admin_path_placeholder' => 'Leave empty to use /admin/',
+                'admin_path_current'   => 'Current admin URL:',
+                'admin_path_blocked'   => 'Direct access to /admin/ is blocked until you enter through this path.',
             ],
 
             'theme' => [
