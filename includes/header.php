@@ -73,7 +73,19 @@ if ($featureImageRaw !== '') {
         <meta property="og:description" content="<?= e($metaDescription) ?>">
     <?php endif; ?>
     <?php
-    $ogLocaleMap = ['de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES', 'it' => 'it_IT', 'nl' => 'nl_NL', 'pt' => 'pt_PT', 'ro' => 'ro_RO'];
+    $ogLocaleMap = [
+        'de' => 'de_DE',
+        'fr' => 'fr_FR',
+        'es' => 'es_ES',
+        'it' => 'it_IT',
+        'nl' => 'nl_NL',
+        'pt' => 'pt_PT',
+        'ro' => 'ro_RO',
+        'zh_CN' => 'zh_CN',
+        'zh_TW' => 'zh_TW',
+        'pl' => 'pl_PL',
+        'fi' => 'fi_FI',
+    ];
     $ogLocale = $ogLocaleMap[$config['language'] ?? 'en'] ?? 'en_US';
     ?>
     <meta property="og:locale" content="<?= e($ogLocale) ?>">
