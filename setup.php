@@ -9,9 +9,6 @@ if (is_installed()) {
     exit;
 }
 
-send_security_headers();
-start_admin_session();
-
 $config = default_config();
 $errors = [];
 $values = [

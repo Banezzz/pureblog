@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
 
 $config = load_config();
 $fontStack = font_stack_css($config['theme']['admin_font_stack'] ?? 'sans');
@@ -57,9 +53,11 @@ require __DIR__ . '/../includes/admin-head.php';
         <h1><?= e(t('admin.settings.css.heading')) ?></h1>
         <?php require __DIR__ . '/../includes/admin-notices.php'; ?>
 
-        <?php $settingsSaveFormId = 'settings-form'; ?>
-        <nav class="editor-actions settings-actions">
-            <?php require __DIR__ . '/../includes/admin-settings-nav.php'; ?>
+        <nav class="admin-actions">
+            <button class="save" type="submit" form="settings-form" aria-label="<?= e(t('admin.settings.nav.save')) ?>">
+                <svg class="icon" aria-hidden="true"><use href="#icon-save"></use></svg>
+                <?= e(t('admin.settings.nav.save')) ?>
+            </button>
         </nav>
 
         <form method="post" id="settings-form">
@@ -74,35 +72,35 @@ require __DIR__ . '/../includes/admin-head.php';
             </section>
         </form>
     </main>
-    <script>
+    <script type="module">
         const frontCssField = document.getElementById('front_css');
         const adminCssField = document.getElementById('admin_css');
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const adminTheme = document.documentElement?.dataset?.adminTheme || 'auto';
-        const useDarkTheme = adminTheme === 'dark' || (adminTheme === 'auto' && prefersDark);
-        const cmConfig = {
-            mode: 'css',
-            lineNumbers: false,
-            lineWrapping: true,
-            viewportMargin: Infinity,
-            inputStyle: 'contenteditable',
-            spellcheck: false,
-            theme: useDarkTheme ? 'material-darker' : 'default',
-        };
 
-        if (frontCssField) {
-            CodeMirror.fromTextArea(frontCssField, {
-                ...cmConfig,
-                placeholder: frontCssField.getAttribute('placeholder') || '',
+        function initCssEditor(textarea) {
+            if (!textarea || typeof window.CodeJar === 'undefined') return;
+
+            const container = document.createElement('div');
+            container.className = 'editor language-css';
+            container.contentEditable = 'true';
+            container.spellcheck = false;
+            container.textContent = textarea.value;
+
+            textarea.style.display = 'none';
+            textarea.parentNode.insertBefore(container, textarea.nextSibling);
+
+            const jar = window.CodeJar(container, (editor) => {
+                Prism.highlightElement(editor);
+                if (editor.textContent.endsWith('\n')) {
+                    editor.appendChild(document.createElement('br'));
+                }
+            }, { spellcheck: false, addClosing: false, preserveIdent: false });
+
+            jar.onUpdate((code) => {
+                textarea.value = code;
             });
         }
 
-        if (adminCssField) {
-            CodeMirror.fromTextArea(adminCssField, {
-                ...cmConfig,
-                placeholder: adminCssField.getAttribute('placeholder') || '',
-            });
-        }
-
+        initCssEditor(frontCssField);
+        initCssEditor(adminCssField);
     </script>
 <?php require __DIR__ . '/../includes/admin-footer.php'; ?>

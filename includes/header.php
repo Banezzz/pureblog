@@ -10,16 +10,35 @@ $headInject = get_contextual_inject($config, 'head', [
     'post' => $post ?? null,
     'page' => $page ?? null,
 ]);
-$frontCssVersion = (string) @filemtime(__DIR__ . '/../assets/css/style.css');
+$frontCssVersion = (string) @filemtime(PUREBLOG_BASE_PATH . '/assets/css/style.css');
 $ogImagePreferred = $config['assets']['og_image_preferred'] ?? 'banner';
-$ogImage = $config['assets']['og_image'] ?? '';
-$isSquareOgImage = $ogImagePreferred === 'square';
+$featureImageRaw  = (is_array($post ?? null) ? ($post['feature_image'] ?? '') : '')
+                 ?: (is_array($page ?? null) ? ($page['feature_image'] ?? '') : '');
+if ($featureImageRaw !== '') {
+    $ogImage = $featureImageRaw[0] === '/'
+        ? get_base_url() . $featureImageRaw
+        : $featureImageRaw;
+    $isSquareOgImage = false;
+} else {
+    $customOgImage = trim((string) ($config['assets']['og_image'] ?? ''));
+    if ($customOgImage !== '' && $customOgImage !== '/assets/images/og-image.png') {
+        $ogImage = $customOgImage[0] === '/' ? get_base_url() . $customOgImage : $customOgImage;
+        $isSquareOgImage = $ogImagePreferred === 'square';
+    } elseif ($ogImagePreferred === 'banner') {
+        $ogImage = get_dynamic_og_image_url($post ?? null, $page ?? null);
+        $isSquareOgImage = false;
+    } else {
+        $ogImage = $customOgImage !== '' ? ($customOgImage[0] === '/' ? get_base_url() . $customOgImage : $customOgImage) : '';
+        $isSquareOgImage = $ogImagePreferred === 'square';
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="<?= e($config['language'] ?? 'en') ?>" data-theme="<?= e($mode) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Pure Blog">
     <?php
     $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '/';
     $bp = base_path();
@@ -33,7 +52,7 @@ $isSquareOgImage = $ogImagePreferred === 'square';
     if ($requestPath === '/index.php') {
         $requestPath = '/';
     }
-    $canonicalUrl = rtrim(get_base_url(), '/') . $requestPath;
+    $canonicalUrl = get_base_url() . $requestPath;
     ?>
     <title><?= e($fullTitle) ?></title>
     <?php if ($metaDescription !== ''): ?>
@@ -42,8 +61,9 @@ $isSquareOgImage = $ogImagePreferred === 'square';
     <link rel="canonical" href="<?= e($canonicalUrl) ?>">
     <?php if (!empty($config['assets']['favicon'])): ?>
         <?php $faviconHref = $config['assets']['favicon']; ?>
-        <?php if ($faviconHref[0] === '/') { $faviconHref = base_path() . $faviconHref; } ?>
+        <?php if ($faviconHref[0] === '/') { $faviconHref = get_base_url() . $faviconHref; } ?>
         <link rel="icon" href="<?= e($faviconHref) ?>">
+        <link rel="apple-touch-icon" href="<?= e($faviconHref) ?>">
     <?php endif; ?>
     <meta property="og:type" content="<?= isset($post) ? 'article' : 'website' ?>">
     <meta property="og:url" content="<?= e($canonicalUrl) ?>">
@@ -53,22 +73,51 @@ $isSquareOgImage = $ogImagePreferred === 'square';
         <meta property="og:description" content="<?= e($metaDescription) ?>">
     <?php endif; ?>
     <?php
-    $ogLocaleMap = ['de' => 'de_DE', 'fr' => 'fr_FR', 'es' => 'es_ES', 'it' => 'it_IT', 'nl' => 'nl_NL', 'pt' => 'pt_PT', 'ro' => 'ro_RO'];
+    $ogLocaleMap = [
+        'de' => 'de_DE',
+        'fr' => 'fr_FR',
+        'es' => 'es_ES',
+        'it' => 'it_IT',
+        'nl' => 'nl_NL',
+        'pt' => 'pt_PT',
+        'ro' => 'ro_RO',
+        'zh_CN' => 'zh_CN',
+        'zh_TW' => 'zh_TW',
+        'pl' => 'pl_PL',
+        'fi' => 'fi_FI',
+    ];
     $ogLocale = $ogLocaleMap[$config['language'] ?? 'en'] ?? 'en_US';
     ?>
     <meta property="og:locale" content="<?= e($ogLocale) ?>">
+    <meta name="twitter:card" content="<?= $ogImage !== '' ? 'summary_large_image' : 'summary' ?>">
+    <meta name="twitter:title" content="<?= e($fullTitle) ?>">
+    <?php if ($metaDescription !== ''): ?>
+        <meta name="twitter:description" content="<?= e($metaDescription) ?>">
+    <?php endif; ?>
+    <?php if ($ogImage !== ''): ?>
+        <meta name="twitter:image" content="<?= e($ogImage) ?>">
+    <?php endif; ?>
+    <?= render_jsonld_script($config, is_array($post ?? null) ? $post : null, is_array($page ?? null) ? $page : null, $canonicalUrl, $ogImage) . "\n" ?>
     <?php if ($ogImage !== ''): ?>
         <meta property="og:image" content="<?= e($ogImage) ?>">
         <?php if ($isSquareOgImage): ?>
             <meta property="og:image:width" content="600">
             <meta property="og:image:height" content="600">
+        <?php else: ?>
+            <meta property="og:image:width" content="1360">
+            <meta property="og:image:height" content="712">
         <?php endif; ?>
     <?php endif; ?>
-    <link rel="alternate" type="application/rss+xml" title="<?= e($config['site_title']) ?> RSS" href="<?= base_path() ?>/feed.php">
+    <link rel="alternate" type="application/rss+xml" title="<?= e($config['site_title']) ?> RSS" href="<?= get_base_url() ?>/feed">
     <style>
         body { background: <?= e($config['theme']['background_color']) ?>; }
     </style>
-    <link rel="stylesheet" href="<?= base_path() ?>/assets/css/style.css?v=<?= e($frontCssVersion) ?>">
+    <?php $fontUrl = font_stack_url($config['theme']['font_stack'] ?? 'sans'); ?>
+    <?php if ($fontUrl !== null): ?>
+        <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+        <link rel="stylesheet" href="<?= e($fontUrl) ?>">
+    <?php endif; ?>
+    <link rel="stylesheet" href="<?= get_base_url() ?>/assets/css/style.css?v=<?= e($frontCssVersion) ?>">
     <style>
         :root {
             --bg-light: <?= e($config['theme']['background_color']) ?>;
@@ -82,9 +131,10 @@ $isSquareOgImage = $ogImagePreferred === 'square';
             --border-dark: <?= e($config['theme']['border_color_dark']) ?>;
             --accent-bg-dark: <?= e($config['theme']['accent_bg_color_dark']) ?>;
             --font-stack: <?= $fontStack ?>;
+            --mono-font-stack: <?= font_stack_css('mono') ?>;
         }
-    <?php if (is_file(__DIR__ . '/../content/css/custom.css')): ?>
-<?php readfile(__DIR__ . '/../content/css/custom.css'); ?>
+    <?php if (is_file(PUREBLOG_CONTENT_CSS_PATH . '/custom.css')): ?>
+<?php readfile(PUREBLOG_CONTENT_CSS_PATH . '/custom.css'); ?>
 <?php endif; ?>
     </style>
 <?php if (trim($headInject) !== ''): ?>
@@ -92,4 +142,4 @@ $isSquareOgImage = $ogImagePreferred === 'square';
     <?php endif; ?>
 </head>
 <body>
-    <?php readfile(__DIR__ . '/../assets/icons/sprite.svg'); ?>
+    <?php readfile(PUREBLOG_BASE_PATH . '/assets/icons/sprite.svg'); ?>

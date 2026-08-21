@@ -12,9 +12,12 @@ $config = $config ?? [];
 $fontStack = $fontStack ?? font_stack_css($config['theme']['font_stack'] ?? 'sans');
 $pageTitle = $pageTitle ?? ($post['title'] ?? t('frontend.post_not_found'));
 $metaDescription = $metaDescription ?? (!empty($post['description']) ? $post['description'] : '');
+start_admin_session();
+maybe_restore_admin_from_cookie();
+$isAdminLoggedIn = is_admin_logged_in();
 
 ?>
-<?php require __DIR__ . '/includes/header.php'; ?>
+<?php if ($__p = find_include('header')) require $__p; ?>
 <?php render_masthead_layout($config, ['post' => $post ?? null]); ?>
     <main>
         <?php if (!$post): ?>
@@ -23,7 +26,7 @@ $metaDescription = $metaDescription ?? (!empty($post['description']) ? $post['de
         <?php else: ?>
             <?php
             $adjacentPosts = get_adjacent_posts_by_slug((string) ($post['slug'] ?? ''), false);
-            $layoutName = trim((string) ($post['layout'] ?? ''));
+            $layoutName = preg_replace('/[^a-zA-Z0-9_-]/', '', trim((string) ($post['layout'] ?? ''))) ?? '';
             $layoutFile = PUREBLOG_BASE_PATH . '/content/layouts/' . $layoutName . '.php';
             ?>
             <?php if ($layoutName !== '' && is_file($layoutFile)): ?>
@@ -31,11 +34,25 @@ $metaDescription = $metaDescription ?? (!empty($post['description']) ? $post['de
             <?php else: ?>
             <article>
                 <h1><?= e($post['title']) ?></h1>
-                <?php if ($post['date']): ?>
-                    <p class="post-date"><svg class="icon" aria-hidden="true"><use href="#icon-calendar"></use></svg> <time datetime="<?= e(format_datetime_for_display((string) $post['date'], $config, 'c')) ?>"><?= e(format_post_date_for_display((string) $post['date'], $config)) ?></time></p>
+                <?php if ($post['date'] || !empty($config['show_reading_time'])): ?>
+                    <p class="post-date">
+                        <?php if ($post['date']): ?>
+                            <svg class="icon" aria-hidden="true"><use href="#icon-calendar"></use></svg> <time datetime="<?= e(format_datetime_for_display((string) $post['date'], $config, 'c')) ?>"><?= e(format_post_date_for_display((string) $post['date'], $config)) ?></time>
+                        <?php endif; ?>
+                        <?php if (!empty($config['show_reading_time'])): ?>
+                            <?php if ($post['date']): ?> &nbsp;|&nbsp; <?php endif; ?><svg class="icon" aria-hidden="true"><use href="#icon-clock"></use></svg> <?= e(calculate_reading_time((string) ($post['content'] ?? ''))) ?>
+                        <?php endif; ?>
+                    </p>
                 <?php endif; ?>
 
-                <?= render_markdown($post['content'], ['post_title' => (string) ($post['title'] ?? '')]) ?>
+                <?php
+                $renderedPost = render_markdown($post['content'], ['post_title' => (string) ($post['title'] ?? '')]);
+                $preparedPost = prepare_heading_ids($renderedPost);
+                if ($config['show_toc'] ?? true) {
+                    echo render_post_toc($preparedPost['toc']);
+                }
+                echo $preparedPost['html'];
+                ?>
                 <?= render_layout_partial('post-meta', [
                     'post' => $post,
                     'config' => $config,
@@ -46,6 +63,12 @@ $metaDescription = $metaDescription ?? (!empty($post['description']) ? $post['de
                 ]) ?>
             </article>
             <?php endif; ?>
+        <?php endif; ?>
+        <?php if ($isAdminLoggedIn): ?>
+            <a class="admin-edit-link" href="<?= e(base_path() . '/admin/edit-post.php?slug=' . urlencode((string) ($post['slug'] ?? ''))) ?>">
+                <svg class="icon" aria-hidden="true"><use href="#icon-edit"></use></svg>
+                <span><?= e(t('frontend.edit_post')) ?></span>
+            </a>
         <?php endif; ?>
     </main>
     <?php render_footer_layout($config, ['post' => $post ?? null]); ?>

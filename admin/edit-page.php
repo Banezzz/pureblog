@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
 
 $config = load_config();
 $fontStack = font_stack_css($config['theme']['admin_font_stack'] ?? 'sans');
@@ -21,7 +17,7 @@ $page = [
     'slug' => '',
     'status' => 'draft',
     'description' => '',
-    'include_in_nav' => true,
+    'include_in_nav' => false,
     'content' => '',
 ];
 $images = [];
@@ -32,12 +28,13 @@ if ($isEditing) {
     $existing = get_page_by_slug($slugParam, true);
     if ($existing) {
         $page = [
-            'title' => $existing['title'] ?? '',
-            'slug' => $existing['slug'] ?? '',
-            'status' => $existing['status'] ?? 'draft',
-            'description' => $existing['description'] ?? '',
-            'include_in_nav' => $existing['include_in_nav'] ?? true,
-            'content' => $existing['content'] ?? '',
+            'title'         => $existing['title'] ?? '',
+            'slug'          => $existing['slug'] ?? '',
+            'status'        => $existing['status'] ?? 'draft',
+            'description'   => $existing['description'] ?? '',
+            'include_in_nav'=> $existing['include_in_nav'] ?? true,
+            'content'       => $existing['content'] ?? '',
+            'feature_image' => $existing['feature_image'] ?? '',
         ];
         $originalSlug = $existing['slug'] ?? '';
     } else {
@@ -68,14 +65,14 @@ if ($isEditing && $originalSlug !== '') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) {
-    verify_csrf();
     $page['title'] = trim($_POST['title'] ?? '');
     $page['slug'] = trim($_POST['slug'] ?? '');
     $page['status'] = trim($_POST['status'] ?? 'draft');
     $page['description'] = trim($_POST['description'] ?? '');
     $includeChoice = $_POST['include_in_nav'] ?? 'yes';
     $page['include_in_nav'] = $includeChoice === 'yes' || $includeChoice === '1';
-    $page['content'] = trim($_POST['content'] ?? '');
+    $page['content']       = trim($_POST['content'] ?? '');
+    $page['feature_image'] = trim($_POST['feature_image'] ?? '');
     $originalSlug = trim($_POST['original_slug'] ?? '');
     $originalStatus = trim($_POST['original_status'] ?? '');
 
@@ -134,9 +131,9 @@ $codeMirror = 'markdown';
 require __DIR__ . '/../includes/admin-head.php';
 ?>
     <main>
-        <h1><?= e(t('admin.page_editor.page_title')) ?></h1>
         <div class="editor-grid">
             <section class="editor-main">
+                <h1><?= e(t('admin.page_editor.page_title')) ?></h1>
                 <?php if ($errors): ?>
                     <div class="notice delete">
                         <ul>
@@ -158,6 +155,7 @@ require __DIR__ . '/../includes/admin-head.php';
                 <form method="post" class="editor-form" id="page-form">
                     <input type="hidden" name="original_slug" value="<?= e($originalSlug) ?>">
                     <input type="hidden" name="original_status" value="<?= e($page['status']) ?>">
+                    <input type="hidden" id="feature-image-value" name="feature_image" value="<?= e($page['feature_image'] ?? '') ?>">
                     <?= csrf_field() ?>
 
                     <nav class="editor-actions">
@@ -169,6 +167,7 @@ require __DIR__ . '/../includes/admin-head.php';
                             <svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>
                             <?= e(t('admin.page_editor.preview')) ?>
                         </button>
+
                         <?php if ($isEditing && $page['slug'] !== ''): ?>
                             <button type="submit" form="delete-page-form" class="link-button delete" aria-label="<?= e(t('admin.page_editor.delete')) ?>" onclick="return confirm('<?= e(t('admin.page_editor.delete_confirm')) ?>');">
                                 <svg class="icon" aria-hidden="true"><use href="#icon-circle-x"></use></svg>
@@ -185,21 +184,28 @@ require __DIR__ . '/../includes/admin-head.php';
                     <textarea id="content" name="content" rows="18" autocomplete="off"><?= e($page['content']) ?></textarea>
                 </form>
                 <?php if ($isEditing && $page['slug'] !== ''): ?>
-                    <form method="post" action="<?= base_path() ?>/admin/delete-page.php" id="delete-page-form">
+                    <form method="post" action="<?= base_path() ?>/admin/delete-content.php" id="delete-page-form">
+                        <input type="hidden" name="type" value="page">
                         <input type="hidden" name="slug" value="<?= e($page['slug']) ?>">
                         <?= csrf_field() ?>
                     </form>
                 <?php endif; ?>
             </section>
             <aside class="editor-sidebar">
+                <div class="sidebar-header">
+                    <button type="button" class="sidebar-toggle" id="sidebar-toggle-tab" aria-label="<?= e(t('admin.page_editor.settings_title')) ?>" title="<?= e(t('admin.page_editor.settings_title')) ?>">
+                        <svg class="icon close-icon" aria-hidden="true"><use href="#icon-panel-right-close"></use></svg>
+                        <svg class="icon open-icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+                    </button>
+                    <span class="sidebar-title"><?= e(t('admin.page_editor.settings_title')) ?></span>
+                </div>
                 <section class="sidebar-section">
                     <div class="section-divider">
-                        <span class="title"><?= e(t('admin.page_editor.settings_title')) ?></span>
                         <label for="slug"><?= e(t('admin.editor.slug_label')) ?></label>
                         <input type="text" id="slug" name="slug" form="page-form" value="<?= e($page['slug']) ?>" autocomplete="off">
 
                         <label for="description"><?= e(t('admin.editor.description_label')) ?></label>
-                        <input type="text" id="description" name="description" form="page-form" value="<?= e($page['description']) ?>" autocomplete="off">
+                        <textarea id="description" name="description" form="page-form" rows="3" autocomplete="off"><?= e($page['description']) ?></textarea>
 
                         <label for="status"><?= e(t('admin.editor.status_label')) ?></label>
                         <select id="status" name="status" form="page-form">
@@ -217,7 +223,7 @@ require __DIR__ . '/../includes/admin-head.php';
 
                 <section class="sidebar-section">
                     <div class="section-divider">
-                        <span class="title"><?= e(t('admin.editor.images_title')) ?></span>
+                    <span class="images-title"><?= e(t('admin.editor.images_title')) ?></span>
                     <form method="post" action="<?= base_path() ?>/admin/upload-image.php" enctype="multipart/form-data" class="upload-form">
                         <input type="hidden" name="slug" value="<?= e($page['slug']) ?>">
                         <input type="hidden" name="editor_type" value="page">
@@ -234,17 +240,29 @@ require __DIR__ . '/../includes/admin-head.php';
                         <?php else: ?>
                             <p><?= e(t('admin.editor.attached_images')) ?></p>
                             <ul class="image-list">
-                            <?php foreach ($images as $image): ?>
-                                <li>
-                                    <code><?= e($image['filename']) ?></code>
-                                    <button type="button" class="link-button copy-markdown" data-markdown="<?= e($image['markdown']) ?>"><svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg> <?= e(t('admin.editor.copy')) ?></button>
-                                <form method="post" action="<?= base_path() ?>/admin/delete-image.php" class="inline-form" onsubmit="return confirm('<?= e(t('admin.page_editor.delete_image_confirm')) ?>');">
-                                    <input type="hidden" name="slug" value="<?= e($page['slug']) ?>">
-                                    <input type="hidden" name="editor_type" value="page">
-                                    <input type="hidden" name="filename" value="<?= e($image['filename']) ?>">
-                                    <?= csrf_field() ?>
-                                    <button type="submit" class="link-button delete"><svg class="icon" aria-hidden="true"><use href="#icon-circle-x"></use></svg> <?= e(t('admin.editor.delete')) ?></button>
-                                </form>
+                            <?php foreach ($images as $image):
+                                $imageRawPath = '/content/images/' . $page['slug'] . '/' . $image['filename'];
+                                $isFeature    = ($page['feature_image'] ?? '') === $imageRawPath;
+                            ?>
+                                <li<?= $isFeature ? ' class="is-feature"' : '' ?>>
+                                    <div class="image-list-top">
+                                        <img src="<?= e($image['url']) ?>" width="30" height="30" class="image-list-preview" alt="<?= e($image['filename']) ?>" loading="lazy"/>
+                                        <code><?= e($image['filename']) ?></code>
+                                    </div>
+                                    <div class="image-list-actions">
+                                        <label class="feature-image-label">
+                                            <input type="checkbox" class="feature-image-check" data-url="<?= e($imageRawPath) ?>" data-filename="<?= e($image['filename']) ?>"<?= $isFeature ? ' checked' : '' ?>>
+                                            <?= e(t('admin.editor.feature_image')) ?>
+                                        </label>
+                                        <button type="button" class="link-button copy-markdown" data-markdown="<?= e($image['markdown']) ?>"><svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg> <?= e(t('admin.editor.copy')) ?></button>
+                                        <form method="post" action="<?= base_path() ?>/admin/delete-image.php" class="inline-form" onsubmit="return confirm('<?= e(t('admin.page_editor.delete_image_confirm')) ?>');">
+                                            <input type="hidden" name="slug" value="<?= e($page['slug']) ?>">
+                                            <input type="hidden" name="editor_type" value="page">
+                                            <input type="hidden" name="filename" value="<?= e($image['filename']) ?>">
+                                            <?= csrf_field() ?>
+                                            <button type="submit" class="link-button delete"><svg class="icon" aria-hidden="true"><use href="#icon-circle-x"></use></svg> <?= e(t('admin.editor.delete')) ?></button>
+                                        </form>
+                                    </div>
                                 </li>
                             <?php endforeach; ?>
                             </ul>
@@ -276,11 +294,13 @@ require __DIR__ . '/../includes/admin-head.php';
                 'copied'            => t('admin.editor.js_copied'),
                 'copy'              => t('admin.editor.copy'),
                 'copy_failed'       => t('admin.editor.js_copy_failed'),
-                'save_post_first'   => t('admin.editor.js_save_post_first'),
-                'save_page_first'   => t('admin.editor.js_save_page_first'),
-                'upload_failed'     => t('admin.editor.js_upload_failed'),
+                'save_post_first'       => t('admin.editor.js_save_post_first'),
+                'save_page_first'       => t('admin.editor.js_save_page_first'),
+                'upload_failed'         => t('admin.editor.js_upload_failed'),
+                'feature_image_confirm' => t('admin.editor.js_feature_image_confirm'),
+                'feature_image_failed'  => t('admin.editor.js_feature_image_failed'),
             ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>,
         };
     </script>
-    <script src="<?= base_path() ?>/admin/js/editor.js?v=<?= e((string) @filemtime(__DIR__ . '/js/editor.js')) ?>"></script>
+    <script type="module" src="<?= base_path() ?>/admin/js/editor.js?v=<?= e((string) @filemtime(__DIR__ . '/js/editor.js')) ?>"></script>
 <?php require __DIR__ . '/../includes/admin-footer.php'; ?>

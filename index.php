@@ -5,7 +5,6 @@ declare(strict_types=1);
 require __DIR__ . '/functions.php';
 
 require_setup_redirect();
-send_security_headers();
 
 // Basic request parsing + route flags.
 $config = load_config();
@@ -17,45 +16,7 @@ if ($bp !== '' && str_starts_with($requestUriPath, $bp)) {
 $requestPath = trim(rawurldecode($requestUriPath), '/');
 $requestPathWithSlash = $requestPath === '' ? '/' : ('/' . $requestPath);
 
-// Custom admin path routing: route /<custom-path>/... to /admin/...
-$customAdminPath = custom_admin_path();
-if ($customAdminPath !== '' && ($requestPath === $customAdminPath || str_starts_with($requestPath, $customAdminPath . '/'))) {
-    $adminRelativePath = $requestPath === $customAdminPath
-        ? 'index.php'
-        : substr($requestPath, strlen($customAdminPath) + 1);
-    $adminRelativePath = trim((string) $adminRelativePath, '/');
-    if ($adminRelativePath === '') {
-        $adminRelativePath = 'index.php';
-    }
-    if (!str_ends_with($adminRelativePath, '.php')) {
-        $adminRelativePath .= '.php';
-    }
-
-    $adminRoot = realpath(__DIR__ . '/admin');
-    $adminTarget = realpath(__DIR__ . '/admin/' . $adminRelativePath);
-    if (
-        $adminRoot === false
-        || $adminTarget === false
-        || !str_starts_with($adminTarget, $adminRoot . '/')
-        || !is_file($adminTarget)
-    ) {
-        require __DIR__ . '/404.php';
-        exit;
-    }
-
-    // Preserve query string
-    $adminQueryString = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY);
-    if ($adminQueryString !== null && $adminQueryString !== '') {
-        $_SERVER['QUERY_STRING'] = $adminQueryString;
-        parse_str($adminQueryString, $parsedQuery);
-        $_GET = array_merge($_GET, $parsedQuery);
-    }
-
-    // Mark this request as routed through the custom path
-    $GLOBALS['__pureblog_custom_admin_routed'] = true;
-    require $adminTarget;
-    exit;
-}
+route_custom_admin_request($requestPath);
 
 $queryString = $_SERVER['QUERY_STRING'] ?? '';
 $cacheKey = $queryString !== '' ? $requestPathWithSlash . '?' . $queryString : $requestPathWithSlash;
@@ -104,21 +65,31 @@ foreach ($customRoutes as $customRoute) {
 }
 
 $isTag = str_starts_with($requestPath, 'tag/');
+$isArchive = $requestPath === 'archive' || str_starts_with($requestPath, 'archive/');
 $tagParam = $isTag ? rawurldecode(substr($requestPath, 4)) : '';
+$archiveYear = '';
+if ($isArchive && $requestPath !== 'archive') {
+    $archiveYear = trim(substr($requestPath, strlen('archive/')), '/');
+    if ($archiveYear !== '' && !preg_match('/^\d{4}$/', $archiveYear)) {
+        require __DIR__ . '/404.php';
+        exit;
+    }
+}
 $reservedPaths = [
     '',
     'index.php',
     'post.php',
     'setup.php',
     'page.php',
+    'archive',
 ];
-$isSingle = !$isTag && $requestPath !== ''
+$isSingle = !$isTag && !$isArchive && $requestPath !== ''
     && !str_contains($requestPath, '.')
     && !in_array($requestPath, $reservedPaths, true)
-    && !str_starts_with($requestPath, 'admin')
-    && !str_starts_with($requestPath, 'assets')
-    && !str_starts_with($requestPath, 'content')
-    && !str_starts_with($requestPath, 'config');
+    && !str_starts_with($requestPath, 'admin/')
+    && !str_starts_with($requestPath, 'assets/')
+    && !str_starts_with($requestPath, 'content/')
+    && !str_starts_with($requestPath, 'config/');
 
 $pageData = $isSingle ? get_page_by_slug($requestPath, false) : null;
 $post = $isSingle && !$pageData ? get_post_by_slug($requestPath, false) : null;
@@ -171,10 +142,10 @@ if (
     && $requestPath !== ''
     && str_contains($requestPath, '.')
     && !in_array($requestPath, $reservedPaths, true)
-    && !str_starts_with($requestPath, 'admin')
-    && !str_starts_with($requestPath, 'assets')
-    && !str_starts_with($requestPath, 'content')
-    && !str_starts_with($requestPath, 'config')
+    && !str_starts_with($requestPath, 'admin/')
+    && !str_starts_with($requestPath, 'assets/')
+    && !str_starts_with($requestPath, 'content/')
+    && !str_starts_with($requestPath, 'config/')
     && !is_file(__DIR__ . '/' . $requestPath)
 ) {
     require __DIR__ . '/404.php';
@@ -204,25 +175,61 @@ if ($isSingle) {
     exit;
 }
 
-// List views (home + tag) with pagination.
+// List views (home + tag + year archive) with pagination.
 $perPage = (int) ($config['posts_per_page'] ?? 20);
 $currentPage = (int) ($_GET['page'] ?? 1);
-$allPosts = $isTag ? $tagPosts : get_all_posts(false);
+$archiveGroups = $isArchive ? get_posts_grouped_by_year(false) : [];
+if ($isArchive && $archiveYear !== '') {
+    $allPosts = $archiveGroups[$archiveYear] ?? [];
+} elseif ($isTag) {
+    $allPosts = $tagPosts;
+} else {
+    $allPosts = get_all_posts(false);
+}
 $pagination = paginate_posts($allPosts, $perPage, $currentPage);
 $posts = $pagination['posts'];
 $totalPages = $pagination['totalPages'];
 $currentPage = $pagination['currentPage'];
 $fontStack = font_stack_css($config['theme']['font_stack'] ?? 'sans');
-$pageTitle = $isTag && $tagParam !== '' ? 'Tag: ' . $tagParam : $config['site_title'];
+if ($isArchive) {
+    $pageTitle = $archiveYear !== ''
+        ? t('frontend.archive_year', ['year' => $archiveYear])
+        : t('frontend.archive_heading');
+} elseif ($isTag && $tagParam !== '') {
+    $pageTitle = 'Tag: ' . $tagParam;
+} else {
+    $pageTitle = $config['site_title'];
+}
 $metaDescription = '';
 $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
 
 ?>
-<?php require __DIR__ . '/includes/header.php'; ?>
+<?php if ($__p = find_include('header')) require $__p; ?>
 <?php render_masthead_layout($config, ['post' => $post ?? null, 'page' => $page ?? null]); ?>
     <main>
-        <!-- Tag archive view -->
-        <?php if ($isTag): ?>
+        <?php if ($isArchive): ?>
+            <h1><?= e($archiveYear !== '' ? t('frontend.archive_year', ['year' => $archiveYear]) : t('frontend.archive_heading')) ?></h1>
+            <?php if ($archiveYear !== ''): ?>
+                <p><a href="<?= e(base_path() . '/archive') ?>"><?= e(t('frontend.archive_all_years')) ?></a></p>
+                <?php if (!$allPosts): ?>
+                    <p><?= e(t('frontend.archive_empty_year')) ?></p>
+                <?php else: ?>
+                    <?php
+                    $paginationBase = base_path() . '/archive/' . rawurlencode($archiveYear);
+                    $postListLayout = 'archive';
+                    if ($__p = find_include('post-list')) require $__p;
+                    ?>
+                <?php endif; ?>
+            <?php elseif ($archiveGroups === []): ?>
+                <p><?= e(t('frontend.no_posts')) ?></p>
+            <?php else: ?>
+                <?php foreach ($archiveGroups as $year => $yearPosts): ?>
+                    <?php if ($year === '0000') { continue; } ?>
+                    <h2><a href="<?= e(base_path() . '/archive/' . rawurlencode((string) $year)) ?>"><?= e((string) $year) ?></a></h2>
+                    <p class="archive-year-count"><?= e(t('frontend.archive_count', ['n' => count($yearPosts)])) ?></p>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        <?php elseif ($isTag): ?>
             <h1 ><?= e($tagParam !== '' ? 'Tag: ' . $tagParam : 'Tags') ?></h1>
             <?php if ($tagSlug === ''): ?>
                 <p><?= e(t('frontend.no_tag_selected')) ?></p>
@@ -231,7 +238,7 @@ $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
             <?php else: ?>
                 <?php
                 $paginationBase = base_path() . '/tag/' . rawurlencode($tagSlug);
-                require __DIR__ . '/includes/post-list.php';
+                if ($__p = find_include('post-list')) require $__p;
                 ?>
             <?php endif; ?>
         <?php else: ?>
@@ -240,7 +247,7 @@ $postListLayout = $config['theme']['post_list_layout'] ?? 'excerpt';
             <?php if (!$blogFeedHidden): ?>
                 <?php
                 $paginationBase = base_path() . '/';
-                require __DIR__ . '/includes/post-list.php';
+                if ($__p = find_include('post-list')) require $__p;
                 ?>
             <?php endif; ?>
         <?php endif; ?>

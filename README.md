@@ -1,58 +1,81 @@
 # Pure Blog
 
-Pure Blog is a simple, flat‑file blogging platform with a Markdown‑first editor and a lightweight admin area. It stores posts and pages as Markdown files on disk—no database required.
+Pure Blog is a simple, flat-file blogging platform with a Markdown-first editor and a lightweight admin area. It stores posts and pages as Markdown files on disk—no database required.
+
+This repository is **v3.7.2** of Pure Blog, plus extra hardening and features for personal use.
 
 ## Features
-- Flat-file content using Markdown and front matter.
-- A clean, distraction-free admin dashboard for writing and organising posts/pages.
-- Draft previews so you can check your work before publishing.
-- Optional tags and tag archives for grouping related posts.
-- Automatic pagination when your post list grows long.
-- An RSS feed so readers can follow along however they like.
-- Built-in search that helps readers find exactly what they’re looking for.
-- A settings page that allows you to customise and configure your blog.
+
+- Flat-file Markdown posts and pages with front matter
+- Admin dashboard, content manager, image library, and draft previews
+- Tags, search, pagination, RSS, sitemap, and scheduled posts
+- Reading time, feature images, dynamic Open Graph cards, and custom navigation
+- Theme settings, custom CSS, hooks, and optional comments integration
+- Configurable admin URL path. Direct `/admin/` access returns 404 until you enter through the custom path
+- Built-in updater pointed at [Banezzz/pureblog](https://github.com/Banezzz/pureblog) releases, with version compare that will not offer a downgrade
+- Simplified Chinese (`zh_CN`) language pack
+- Automatic table of contents on long posts
+- Related posts by shared tags
+- Year archives at `/archive` and `/archive/YYYY`
+- JSON-LD structured data and Twitter card meta tags
+- Extra `.htaccess` hardening (config/backup/git/VERSION, hidden files)
+- MIME-forced image extensions and CSRF protection on the setup form
+
+## Requirements
+
+- PHP 8.1 or newer
+- A standard web server (Apache or Nginx)
+- Required PHP extensions: `mbstring`, `xml`
+- Recommended PHP extensions: `curl`, `zip`
+- Write access to `/config`, `/content`, and `/data`
 
 ## Getting started
-All you need to run Pure Blog is a host that supports PHP (pretty much all of them do). Once you have that, all you need to do is:
 
 1. Download the Pure Blog package.
 2. Extract the zip file and upload the contents to your web server.
 3. Visit the URL of your blog and setup will automatically start.
-4. Once your site is setup, visit `/admin` and login to your new blog.
+4. Once your site is set up, visit `/admin` and log in. You can later change the admin path in Settings → User.
 
 ## Content
-Posts live in `content/posts` and pages live in `content/pages`. When images are uploaded they are stored in `/content/images/[post/page-slug]`.
+
+Posts live in `content/posts` and pages live in `content/pages`. Uploaded images are stored in `/content/images/[post/page-slug]`.
 
 ## Notes
+
 - Pure Blog is intentionally minimal and designed for personal sites.
 - HTML in Markdown is supported.
+- Table of contents, related posts, and JSON-LD can be toggled in Settings → Site.
 
-## Upgrading from v1.x to v2.x
+## Upgrading from v2.x to v3.x
 
-When upgrading from v1.x to v2.x, keep the following in mind:
+v3.0 restructured the core and cannot be applied with the old in-app updater. Treat this as a manual upgrade.
 
 ### Data preservation
-Upload all new code files but **do not overwrite** these directories — they contain your data:
+
+Upload the new code files but **do not overwrite** these directories — they contain your data:
+
 - `config/` — site configuration and credentials
 - `content/posts/` — blog posts
-- `content/pages/` — pages (but note v2.x adds `content/pages/search.md`)
+- `content/pages/` — pages
 - `content/images/` — uploaded images
 - `content/css/` — custom CSS
 - `data/` — runtime data
 - `backup/` — backups
 
-### Rebuild search index
-v2.x uses a new JSON-based search index (`content/search-index.json`). After upgrading, the index will be empty and search will return no results. Rebuild it by either:
-- Editing and saving any post in the admin panel (triggers automatic rebuild), or
-- Running on the server: `php -r "require 'functions.php'; build_search_index(); echo 'done';"`
+Keep any custom rules you added to the root `.htaccess`.
 
-### Removed files
-The following files from v1.x can be safely deleted:
-- `search.php` — replaced by page-based search (`content/pages/search.md`)
-- `search/` directory
+### After upgrading
 
-### New directories to create
-Ensure these exist with correct permissions after uploading:
-- `content/autosaves/`
-- `lang/`
-- `lib/`
+1. Log in again. Remember-me cookies from v2.x are invalid.
+2. If search results look empty, edit and save any post, or run: `php -r "require 'functions.php'; build_search_index(); echo 'done';"`
+3. Review Settings → Site for new options (reading time, table of contents, related posts, JSON-LD, comments).
+4. If you use a custom admin path, enter through that path after the upgrade.
+
+### Removed / replaced files
+
+These v2.x files are gone in 3.x and can be deleted if they are still on the server:
+
+- `admin/pages.php`
+- `admin/delete-post.php`
+- `admin/delete-page.php` (replaced by `admin/delete-content.php`)
+- `config/hooks-example.php`

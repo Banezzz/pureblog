@@ -7,7 +7,7 @@ require_once __DIR__ . '/functions.php';
 require_setup_redirect();
 
 $config  = load_config();
-$baseUrl = rtrim(get_base_url(), '/');
+$baseUrl = get_base_url();
 
 header('Content-Type: application/xml; charset=UTF-8');
 
@@ -32,7 +32,7 @@ foreach (get_all_pages(false) as $page) {
 }
 
 // Published posts
-foreach (get_all_posts(false) as $post) {
+foreach (get_all_posts_meta(false) as $post) {
     $slug = trim((string) ($post['slug'] ?? ''));
     if ($slug === '') {
         continue;
