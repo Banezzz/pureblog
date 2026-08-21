@@ -56,6 +56,13 @@ return [
         'edit_post'             => 'Muokkaa julkaisua',
         'edit_page'             => 'Muokkaa sivua',
         'reading_time'          => 'lukuaika: {n} min',
+        'toc_heading'           => 'Contents',
+        'related_posts'         => 'Related posts',
+        'archive_heading'       => 'Archive',
+        'archive_year'          => 'Archive: {year}',
+        'archive_all_years'     => 'All years',
+        'archive_empty_year'    => 'No posts found for this year.',
+        'archive_count'         => '{n} posts',
     ],
 
     // -------------------------------------------------------------------------
@@ -341,6 +348,9 @@ return [
                 'timezone'           => 'Aikavyöhyke',
                 'date_format'        => 'Päivänmäärän formaatti',
                 'show_reading_time'  => 'Näytä lukuaika julkaisujen yhteydessä',
+                'show_toc'           => 'Show a table of contents on long posts',
+                'show_related_posts' => 'Show related posts by tag',
+                'show_jsonld'        => 'Add JSON-LD structured data for search engines',
                 'homepage'           => 'Kotisivu',
                 'blog_page'          => 'Blogisivu',
                 'base_url'           => 'Kanta-URL',
@@ -418,6 +428,10 @@ return [
                 'error_username'       => 'Ylläpitäjä käyttäjätunnus vaaditaan.',
                 'error_password_match' => 'Uusi salasana ja vahvistus eivät vastaa toisiaan.',
                 'error_password_wrong' => 'Nykyinen salasana on väärä.',
+                'admin_path'           => 'Custom admin URL path',
+                'admin_path_placeholder' => 'Leave empty to use /admin/',
+                'admin_path_current'   => 'Current admin URL:',
+                'admin_path_blocked'   => 'Direct access to /admin/ is blocked until you enter through this path.',
             ],
 
             'theme' => [

@@ -56,6 +56,13 @@ return [
         'edit_post'             => 'Edit post', // ENGLISH PLACEHOLDER
         'edit_page'             => 'Edit page', // ENGLISH PLACEHOLDER
         'reading_time'          => '{n} min read', // ENGLISH PLACEHOLDER
+        'toc_heading'           => 'Contents',
+        'related_posts'         => 'Related posts',
+        'archive_heading'       => 'Archive',
+        'archive_year'          => 'Archive: {year}',
+        'archive_all_years'     => 'All years',
+        'archive_empty_year'    => 'No posts found for this year.',
+        'archive_count'         => '{n} posts',
     ],
 
     // -------------------------------------------------------------------------
@@ -341,6 +348,9 @@ return [
                 'timezone'           => 'Tijdzone',
                 'date_format'        => 'Datum formatering',
                 'show_reading_time'  => 'Show reading time on posts', // ENGLISH PLACEHOLDER
+                'show_toc'           => 'Show a table of contents on long posts',
+                'show_related_posts' => 'Show related posts by tag',
+                'show_jsonld'        => 'Add JSON-LD structured data for search engines',
                 'homepage'           => 'Homepagina',
                 'blog_page'          => 'Blogpagina',
                 'base_url'           => 'Basis URL',
@@ -418,6 +428,10 @@ return [
                 'error_username'       => 'Admin gebruikersnaam is vereist.',
                 'error_password_match' => 'Nieuw wachtwoord en bevestiging zijn niet hetzelfde.',
                 'error_password_wrong' => 'Huidig wachtwoord is incorrect.',
+                'admin_path'           => 'Custom admin URL path',
+                'admin_path_placeholder' => 'Leave empty to use /admin/',
+                'admin_path_current'   => 'Current admin URL:',
+                'admin_path_blocked'   => 'Direct access to /admin/ is blocked until you enter through this path.',
             ],
 
             'theme' => [

@@ -56,6 +56,13 @@ return [
         'edit_post'             => 'Editează articolul',
         'edit_page'             => 'Editează pagina',
         'reading_time'          => '{n} min de citire',
+        'toc_heading'           => 'Contents',
+        'related_posts'         => 'Related posts',
+        'archive_heading'       => 'Archive',
+        'archive_year'          => 'Archive: {year}',
+        'archive_all_years'     => 'All years',
+        'archive_empty_year'    => 'No posts found for this year.',
+        'archive_count'         => '{n} posts',
     ],
 
     // -------------------------------------------------------------------------
@@ -341,6 +348,9 @@ return [
                 'timezone'           => 'Fus orar',
                 'date_format'        => 'Format dată',
                 'show_reading_time'  => 'Afișează timpul de citire la articole',
+                'show_toc'           => 'Show a table of contents on long posts',
+                'show_related_posts' => 'Show related posts by tag',
+                'show_jsonld'        => 'Add JSON-LD structured data for search engines',
                 'homepage'           => 'Pagina principală',
                 'blog_page'          => 'Pagina blogului',
                 'base_url'           => 'URL de bază',
@@ -418,6 +428,10 @@ return [
                 'error_username'       => 'Numele de utilizator admin este obligatoriu.',
                 'error_password_match' => 'Parola nouă și confirmarea nu coincid.',
                 'error_password_wrong' => 'Parola curentă este incorectă.',
+                'admin_path'           => 'Custom admin URL path',
+                'admin_path_placeholder' => 'Leave empty to use /admin/',
+                'admin_path_current'   => 'Current admin URL:',
+                'admin_path_blocked'   => 'Direct access to /admin/ is blocked until you enter through this path.',
             ],
 
             'theme' => [

@@ -57,6 +57,13 @@ return [
         'edit_post'             => 'Éditer l\'article',
         'edit_page'             => 'Éditer la page',
         'reading_time'          => '{n} minutes de lecture',
+        'toc_heading'           => 'Contents',
+        'related_posts'         => 'Related posts',
+        'archive_heading'       => 'Archive',
+        'archive_year'          => 'Archive: {year}',
+        'archive_all_years'     => 'All years',
+        'archive_empty_year'    => 'No posts found for this year.',
+        'archive_count'         => '{n} posts',
     ],
     // -------------------------------------------------------------------------
     // Admin
@@ -340,6 +347,9 @@ return [
                 'timezone'            => 'Fuseau horaire',
                 'date_format'         => 'Format de date',
                 'show_reading_time'  => 'Afficher la durée de lecture des articles',
+                'show_toc'           => 'Show a table of contents on long posts',
+                'show_related_posts' => 'Show related posts by tag',
+                'show_jsonld'        => 'Add JSON-LD structured data for search engines',
                 'homepage'            => 'Page d\'accueil',
                 'blog_page'           => 'Page du blog',
                 'base_url'            => 'URL de base',
@@ -417,6 +427,10 @@ return [
                 'error_username'       => 'Le nom d\'utilisateur admin est obligatoire.',
                 'error_password_match' => 'Le nouveau mot de passe et la confirmation ne correspondent pas.',
                 'error_password_wrong' => 'Le mot de passe actuel est incorrect.',
+                'admin_path'           => 'Custom admin URL path',
+                'admin_path_placeholder' => 'Leave empty to use /admin/',
+                'admin_path_current'   => 'Current admin URL:',
+                'admin_path_blocked'   => 'Direct access to /admin/ is blocked until you enter through this path.',
             ],
 
             'theme' => [

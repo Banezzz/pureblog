@@ -56,6 +56,13 @@ return [
         'edit_post'             => 'Edit post', // ENGLISH PLACEHOLDER
         'edit_page'             => 'Edit page', // ENGLISH PLACEHOLDER
         'reading_time'          => '{n} min read', // ENGLISH PLACEHOLDER
+        'toc_heading'           => 'Contents',
+        'related_posts'         => 'Related posts',
+        'archive_heading'       => 'Archive',
+        'archive_year'          => 'Archive: {year}',
+        'archive_all_years'     => 'All years',
+        'archive_empty_year'    => 'No posts found for this year.',
+        'archive_count'         => '{n} posts',
     ],
 
     // -------------------------------------------------------------------------
@@ -340,6 +347,9 @@ return [
                 'timezone'           => 'Strefa czasowa',
                 'date_format'        => 'Format daty',
                 'show_reading_time'  => 'Show reading time on posts', // ENGLISH PLACEHOLDER
+                'show_toc'           => 'Show a table of contents on long posts',
+                'show_related_posts' => 'Show related posts by tag',
+                'show_jsonld'        => 'Add JSON-LD structured data for search engines',
                 'homepage'           => 'Strona główna',
                 'blog_page'          => 'Blog',
                 'base_url'           => 'Adres URL',
@@ -417,6 +427,10 @@ return [
                 'error_username'       => 'Użytkownik Admin jest wymagany.',
                 'error_password_match' => 'Pola Nowe hasło i Potwierdź nowe hasło nie są identyczne.',
                 'error_password_wrong' => 'Bieżące hasło jest nieprawidłowe.',
+                'admin_path'           => 'Custom admin URL path',
+                'admin_path_placeholder' => 'Leave empty to use /admin/',
+                'admin_path_current'   => 'Current admin URL:',
+                'admin_path_blocked'   => 'Direct access to /admin/ is blocked until you enter through this path.',
             ],
 
             'theme' => [
