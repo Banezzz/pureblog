@@ -676,6 +676,31 @@ button:disabled:hover {
     font-weight: bold;
 }
 
+.post-toc {
+    margin: 0 0 2rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-color);
+    background: var(--accent-bg-color);
+}
+
+.post-toc-heading {
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+}
+
+.post-toc ol {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.post-toc li + li {
+    margin-top: 0.25rem;
+}
+
+.post-toc .toc-h3 {
+    margin-left: 1rem;
+}
+
 .post-nav p {
     padding: 1rem 0;
 }

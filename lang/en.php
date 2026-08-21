@@ -53,6 +53,7 @@ return [
         'edit_post'             => 'Edit post',
         'edit_page'             => 'Edit page',
         'reading_time'          => '{n} min read',
+        'toc_heading'           => 'Contents',
     ],
 
     // -------------------------------------------------------------------------
@@ -337,6 +338,7 @@ return [
                 'timezone'           => 'Timezone',
                 'date_format'        => 'Date format',
                 'show_reading_time'  => 'Show reading time on posts',
+                'show_toc'           => 'Show a table of contents on long posts',
                 'homepage'           => 'Homepage',
                 'blog_page'          => 'Blog page',
                 'base_url'           => 'Base URL',

@@ -45,7 +45,14 @@ $isAdminLoggedIn = is_admin_logged_in();
                     </p>
                 <?php endif; ?>
 
-                <?= render_markdown($post['content'], ['post_title' => (string) ($post['title'] ?? '')]) ?>
+                <?php
+                $renderedPost = render_markdown($post['content'], ['post_title' => (string) ($post['title'] ?? '')]);
+                $preparedPost = prepare_heading_ids($renderedPost);
+                if ($config['show_toc'] ?? true) {
+                    echo render_post_toc($preparedPost['toc']);
+                }
+                echo $preparedPost['html'];
+                ?>
                 <?= render_layout_partial('post-meta', [
                     'post' => $post,
                     'config' => $config,
