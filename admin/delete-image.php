@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
 
 verify_csrf();
 
@@ -36,12 +32,7 @@ if (!is_safe_image_slug($folderName)) {
     exit;
 }
 
-// Validate folder path to prevent path traversal
-$targetDir = realpath($baseDir . '/' . $folderName);
-if ($targetDir === false || !str_starts_with($targetDir, $baseDir . '/')) {
-    header('Location: ' . $redirect . '&upload_error=' . urlencode('Invalid folder.'));
-    exit;
-}
+$targetDir = $baseDir . '/' . $folderName;
 $targetFile = $targetDir . '/' . basename($filename);
 
 if (!validate_image_path($baseDir, $targetDir)) {

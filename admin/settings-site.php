@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
 
 $config = load_config();
 $fontStack = font_stack_css($config['theme']['admin_font_stack'] ?? 'sans');
@@ -25,6 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
     $siteDescription = trim($_POST['site_description'] ?? '');
     $siteEmail = trim($_POST['site_email'] ?? '');
     $customNav = trim($_POST['custom_nav'] ?? '');
+    $customNavOnly = !empty($_POST['custom_nav_only']);
     $customRoutes = trim($_POST['custom_routes'] ?? '');
     $headInjectPage = trim($_POST['head_inject_page'] ?? '');
     $headInjectPost = trim($_POST['head_inject_post'] ?? '');
@@ -40,10 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
     $blogPageSlug = trim($_POST['blog_page_slug'] ?? '');
     $searchPageSlug = trim($_POST['search_page_slug'] ?? '');
     $ogImagePreferred = trim($_POST['og_image_preferred'] ?? 'banner');
+    $showReadingTime = !empty($_POST['show_reading_time']);
     $cacheEnabled = !empty($_POST['cache_enabled']);
     $rssttl = max(0, (int) ($_POST['rss_ttl'] ?? 3600));
     $adminHomepage = in_array($_POST['admin_homepage'] ?? '', ['dashboard', 'content'], true) ? $_POST['admin_homepage'] : 'dashboard';
     $adminHideDashboard = $adminHomepage === 'content' && !empty($_POST['admin_hide_dashboard']);
+    $enableBlogPosts = ($blogPageSlug === $hiddenBlogValue) ? !empty($_POST['enable_blog_posts']) : true;
+    $purecommentsEnabled = !empty($_POST['purecomments_enabled']);
+    $purecommentsUrl = trim($_POST['purecomments_url'] ?? '');
 
     if ($siteTitle === '') {
         $errors[] = t('admin.settings.site.error_title');
@@ -73,12 +74,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
         $errors[] = t('admin.settings.site.error_og_format');
     }
 
+    if ($purecommentsEnabled) {
+        if ($purecommentsUrl === '') {
+            $errors[] = t('admin.settings.site.error_purecomments_url');
+        } elseif (!filter_var($purecommentsUrl, FILTER_VALIDATE_URL)) {
+            $errors[] = t('admin.settings.site.error_purecomments_url_invalid');
+        }
+    }
+
     if (!$errors) {
         $config['site_title'] = $siteTitle;
         $config['site_tagline'] = $siteTagline;
         $config['site_description'] = $siteDescription;
         $config['site_email'] = $siteEmail;
         $config['custom_nav'] = $customNav;
+        $config['custom_nav_only'] = $customNavOnly;
         $config['custom_routes'] = $customRoutes;
         $config['head_inject_page'] = $headInjectPage;
         $config['head_inject_post'] = $headInjectPost;
@@ -89,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
         $config['language'] = $language !== '' ? $language : 'en';
         $config['timezone'] = $timezone;
         $config['date_format'] = $dateFormat;
+        $config['show_reading_time'] = $showReadingTime;
         $config['base_url'] = $baseUrl;
         $config['homepage_slug'] = $homepageSlug;
         $config['blog_page_slug'] = $blogPageSlug;
@@ -97,6 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
         $config['cache']['rss_ttl'] = $rssttl;
         $config['admin_homepage'] = $adminHomepage;
         $config['admin_hide_dashboard'] = $adminHideDashboard;
+        $config['enable_blog_posts'] = $enableBlogPosts;
+        $config['community']['purecomments_enabled'] = $purecommentsEnabled;
+        $config['community']['purecomments_url'] = rtrim($purecommentsUrl, '/');
 
         if (!isset($config['assets'])) {
             $config['assets'] = ['favicon' => '', 'og_image' => '', 'og_image_preferred' => 'banner'];
@@ -108,68 +122,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
             mkdir($assetDir, 0755, true);
         }
 
-        // MIME whitelist for image uploads
-        $allowedImageTypes = [
-            'image/jpeg' => 'jpg',
-            'image/png' => 'png',
-            'image/gif' => 'gif',
-            'image/webp' => 'webp',
-            'image/x-icon' => 'ico',
-            'image/vnd.microsoft.icon' => 'ico',
-        ];
-        // Extension to MIME fallback (when fileinfo is unavailable)
-        $extToMime = [
-            'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
-            'png' => 'image/png', 'gif' => 'image/gif',
-            'webp' => 'image/webp', 'ico' => 'image/x-icon',
-        ];
-        $finfo = class_exists('finfo') ? new finfo(FILEINFO_MIME_TYPE) : null;
+        $allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
 
         if (!empty($_FILES['favicon']['name']) && $_FILES['favicon']['error'] === UPLOAD_ERR_OK) {
-            $faviconMime = $finfo ? ($finfo->file($_FILES['favicon']['tmp_name']) ?: '') : '';
-            if ($faviconMime === '') {
-                $ext = strtolower(pathinfo($_FILES['favicon']['name'], PATHINFO_EXTENSION));
-                $faviconMime = $extToMime[$ext] ?? '';
-            }
-            if (!isset($allowedImageTypes[$faviconMime])) {
-                $errors[] = 'Favicon must be an image file (JPG, PNG, GIF, WebP, or ICO).';
+            $mimeType = $finfo->file($_FILES['favicon']['tmp_name']) ?: '';
+            if (in_array($mimeType, $allowedImageTypes, true)) {
+                $name = basename($_FILES['favicon']['name']);
+                $name = strtolower($name);
+                $name = preg_replace('/[^a-z0-9._-]/', '-', $name) ?? $name;
+                $name = preg_replace('/-+/', '-', $name) ?? $name;
+                $name = trim($name, '-');
+                if ($name !== '') {
+                    $dest = $assetDir . '/' . $name;
+                    if (move_uploaded_file($_FILES['favicon']['tmp_name'], $dest)) {
+                        $config['assets']['favicon'] = '/content/images/' . $name;
+                    }
+                }
             } else {
-                $basename = pathinfo(basename($_FILES['favicon']['name']), PATHINFO_FILENAME);
-                $basename = strtolower($basename);
-                $basename = preg_replace('/[^a-z0-9_-]/', '-', $basename) ?? '';
-                $basename = trim($basename, '-');
-                if ($basename === '') {
-                    $basename = 'favicon';
-                }
-                $name = $basename . '.' . $allowedImageTypes[$faviconMime];
-                $dest = $assetDir . '/' . $name;
-                if (move_uploaded_file($_FILES['favicon']['tmp_name'], $dest)) {
-                    $config['assets']['favicon'] = '/content/images/' . $name;
-                }
+                $errors[] = t('admin.editor.error_upload_type');
             }
         }
 
         if (!empty($_FILES['og_image']['name']) && $_FILES['og_image']['error'] === UPLOAD_ERR_OK) {
-            $ogMime = $finfo ? ($finfo->file($_FILES['og_image']['tmp_name']) ?: '') : '';
-            if ($ogMime === '') {
-                $ext = strtolower(pathinfo($_FILES['og_image']['name'], PATHINFO_EXTENSION));
-                $ogMime = $extToMime[$ext] ?? '';
-            }
-            if (!isset($allowedImageTypes[$ogMime])) {
-                $errors[] = 'Open Graph image must be an image file (JPG, PNG, GIF, WebP, or ICO).';
+            $mimeType = $finfo->file($_FILES['og_image']['tmp_name']) ?: '';
+            if (in_array($mimeType, $allowedImageTypes, true)) {
+                $name = basename($_FILES['og_image']['name']);
+                $name = strtolower($name);
+                $name = preg_replace('/[^a-z0-9._-]/', '-', $name) ?? $name;
+                $name = preg_replace('/-+/', '-', $name) ?? $name;
+                $name = trim($name, '-');
+                if ($name !== '') {
+                    $dest = $assetDir . '/' . $name;
+                    if (move_uploaded_file($_FILES['og_image']['tmp_name'], $dest)) {
+                        $config['assets']['og_image'] = '/content/images/' . $name;
+                    }
+                }
             } else {
-                $basename = pathinfo(basename($_FILES['og_image']['name']), PATHINFO_FILENAME);
-                $basename = strtolower($basename);
-                $basename = preg_replace('/[^a-z0-9_-]/', '-', $basename) ?? '';
-                $basename = trim($basename, '-');
-                if ($basename === '') {
-                    $basename = 'og-image';
-                }
-                $name = $basename . '.' . $allowedImageTypes[$ogMime];
-                $dest = $assetDir . '/' . $name;
-                if (move_uploaded_file($_FILES['og_image']['tmp_name'], $dest)) {
-                    $config['assets']['og_image'] = '/content/images/' . $name;
-                }
+                $errors[] = t('admin.editor.error_upload_type');
             }
         }
 
@@ -188,9 +178,11 @@ require __DIR__ . '/../includes/admin-head.php';
         <h1><?= e(t('admin.settings.site.heading')) ?></h1>
         <?php require __DIR__ . '/../includes/admin-notices.php'; ?>
 
-        <?php $settingsSaveFormId = 'settings-form'; ?>
-        <nav class="editor-actions settings-actions">
-            <?php require __DIR__ . '/../includes/admin-settings-nav.php'; ?>
+        <nav class="admin-actions">
+            <button class="save" type="submit" form="settings-form" aria-label="<?= e(t('admin.settings.nav.save')) ?>">
+                <svg class="icon" aria-hidden="true"><use href="#icon-save"></use></svg>
+                <?= e(t('admin.settings.nav.save')) ?>
+            </button>
         </nav>
 
         <form method="post" enctype="multipart/form-data" id="settings-form">
@@ -225,6 +217,11 @@ require __DIR__ . '/../includes/admin-head.php';
                 <label for="date_format"><?= e(t('admin.settings.site.date_format')) ?> <span class="tip">(<a href="https://www.php.net/manual/en/datetime.format.php" target="_blank" rel="noopener noreferrer"><?= e(t('admin.settings.site.tip_date_format_link')) ?></a>)</span></label>
                 <input type="text" id="date_format" name="date_format" value="<?= e((string) ($config['date_format'] ?? 'F j, Y')) ?>" placeholder="F j, Y" required>
 
+                <label class="inline-checkbox" for="show_reading_time">
+                    <input type="checkbox" id="show_reading_time" name="show_reading_time"<?= !empty($config['show_reading_time']) ? ' checked' : '' ?>>
+                    <?= e(t('admin.settings.site.show_reading_time')) ?>
+                </label>
+
                 <label for="homepage_slug"><?= e(t('admin.settings.site.homepage')) ?></label>
                 <select id="homepage_slug" name="homepage_slug">
                     <option value=""><?= e(t('admin.settings.site.homepage_default')) ?></option>
@@ -244,6 +241,12 @@ require __DIR__ . '/../includes/admin-head.php';
                         </option>
                     <?php endforeach; ?>
                 </select>
+                <div id="enable_blog_posts_container" style="<?= ($config['blog_page_slug'] ?? '') === $hiddenBlogValue ? '' : 'display: none;' ?> margin-top: -0.75rem; margin-bottom: 1.5rem;">
+                    <label class="inline-checkbox" for="enable_blog_posts">
+                        <input type="checkbox" id="enable_blog_posts" name="enable_blog_posts"<?= ($config['enable_blog_posts'] ?? true) ? ' checked' : '' ?>>
+                        <?= e(t('admin.settings.site.enable_blog_posts')) ?>
+                    </label>
+                </div>
 
                 <label for="search_page_slug"><?= e(t('admin.settings.site.search_page')) ?></label>
                 <select id="search_page_slug" name="search_page_slug">
@@ -266,6 +269,7 @@ require __DIR__ . '/../includes/admin-head.php';
 
                 <label for="og_image"><?= e(t('admin.settings.site.og_image')) ?> <span class="tip">(<?= e(t('admin.settings.site.tip_og_image')) ?>)</span></label>
                 <input type="file" id="og_image" name="og_image" accept="image/*">
+                <p class="tip"><?= e(t('admin.settings.site.tip_og_image_dynamic')) ?> <a href="https://docs.pureblog.org/open-graph-images/" target="_blank" rel="noopener noreferrer"><?= e(t('admin.settings.site.tip_og_image_doc_link')) ?></a>.</p>
                 <?php if (!empty($config['assets']['og_image'])): ?>
                     <p class="current-image"><?= e(t('admin.settings.site.current')) ?>: <a href="<?= e($config['assets']['og_image']) ?>" target="_blank" rel="noopener noreferrer"><?= e($config['assets']['og_image']) ?></a></p>
                 <?php endif; ?>
@@ -279,17 +283,35 @@ require __DIR__ . '/../includes/admin-head.php';
                 <label for="custom_nav"><?= e(t('admin.settings.site.custom_nav')) ?> <span class="tip">(<?= e(t('admin.settings.site.tip_one_per_line')) ?>)</span></label>
                 <textarea id="custom_nav" name="custom_nav" rows="4" placeholder="GitHub | https://github.com/you&#10;Projects | /projects"><?= e($config['custom_nav'] ?? '') ?></textarea>
 
+                <label class="inline-checkbox" for="custom_nav_only" style="margin-top: -0.5rem; margin-bottom: 1.25rem;">
+                    <input type="checkbox" id="custom_nav_only" name="custom_nav_only"<?= !empty($config['custom_nav_only']) ? ' checked' : '' ?>>
+                    <?= e(t('admin.settings.site.custom_nav_only')) ?>
+                </label>
+
                 <label for="custom_routes"><?= e(t('admin.settings.site.custom_routes')) ?> <span class="tip">(<?= e(t('admin.settings.site.tip_one_per_line')) ?>)</span></label>
                 <textarea id="custom_routes" name="custom_routes" rows="4" placeholder="/archive | /content/includes/archive.php&#10;/reading | reading.php"><?= e($config['custom_routes'] ?? '') ?></textarea>
             </section>
 
             <section class="section-divider">
+                <span class="title"><?= e(t('admin.settings.site.community_section')) ?></span>
+                <label class="inline-checkbox" for="purecomments_enabled">
+                    <input type="checkbox" id="purecomments_enabled" name="purecomments_enabled"<?= !empty($config['community']['purecomments_enabled']) ? ' checked' : '' ?>>
+                    <?= e(t('admin.settings.site.purecomments_enable')) ?>
+                </label>
+
+                <div id="purecomments_url_container" style="<?= !empty($config['community']['purecomments_enabled']) ? '' : 'display: none;' ?> margin-top: -0.75rem; margin-bottom: 1.5rem;">
+                    <label for="purecomments_url"><?= e(t('admin.settings.site.purecomments_url')) ?></label>
+                    <input type="url" id="purecomments_url" name="purecomments_url" value="<?= e($config['community']['purecomments_url'] ?? '') ?>" placeholder="https://comments.example.com"<?= !empty($config['community']['purecomments_enabled']) ? ' required' : ' disabled' ?>>
+                </div>
+            </section>
+
+            <section class="section-divider">
                 <span class="title"><?= e(t('admin.settings.site.header_injects')) ?></span>
                 <label for="head_inject_page"><?= e(t('admin.settings.site.head_inject_page_label')) ?> <span class="tip">(<?= e(t('admin.settings.site.tip_optional')) ?>)</span></label>
-                <textarea id="head_inject_page" name="head_inject_page" rows="6" placeholder="&lt;link rel=&quot;stylesheet&quot; href=&quot;/content/css/comments.css&quot;&gt;"><?= e($config['head_inject_page'] ?? '') ?></textarea>
+                <textarea id="head_inject_page" name="head_inject_page" rows="6" placeholder="&lt;meta name=&quot;x-custom&quot; content=&quot;value&quot;&gt;"><?= e($config['head_inject_page'] ?? '') ?></textarea>
 
                 <label for="head_inject_post"><?= e(t('admin.settings.site.head_inject_post_label')) ?> <span class="tip">(<?= e(t('admin.settings.site.tip_optional')) ?>)</span></label>
-                <textarea id="head_inject_post" name="head_inject_post" rows="6" placeholder="&lt;meta name=&quot;x-custom&quot; content=&quot;value&quot;&gt;"><?= e($config['head_inject_post'] ?? '') ?></textarea>
+                <textarea id="head_inject_post" name="head_inject_post" rows="6" placeholder="&lt;link rel=&quot;stylesheet&quot; href=&quot;/content/css/comments.css&quot;&gt;"><?= e($config['head_inject_post'] ?? '') ?></textarea>
             </section>
 
             <section class="section-divider">
@@ -332,6 +354,33 @@ require __DIR__ . '/../includes/admin-head.php';
     adminHomepageSelect.addEventListener('change', function () {
         hideDashboardCheckbox.disabled = this.value !== 'content';
         if (hideDashboardCheckbox.disabled) hideDashboardCheckbox.checked = false;
+    });
+
+    const blogPageSlugSelect = document.getElementById('blog_page_slug');
+    const enableBlogPostsContainer = document.getElementById('enable_blog_posts_container');
+    const enableBlogPostsCheckbox = document.getElementById('enable_blog_posts');
+    blogPageSlugSelect.addEventListener('change', function () {
+        if (this.value === '__hidden__') {
+            enableBlogPostsContainer.style.display = '';
+        } else {
+            enableBlogPostsContainer.style.display = 'none';
+            enableBlogPostsCheckbox.checked = true;
+        }
+    });
+
+    const pureCommentsEnabledCheckbox = document.getElementById('purecomments_enabled');
+    const pureCommentsUrlContainer = document.getElementById('purecomments_url_container');
+    const pureCommentsUrlInput = document.getElementById('purecomments_url');
+    pureCommentsEnabledCheckbox.addEventListener('change', function () {
+        if (this.checked) {
+            pureCommentsUrlContainer.style.display = '';
+            pureCommentsUrlInput.disabled = false;
+            pureCommentsUrlInput.required = true;
+        } else {
+            pureCommentsUrlContainer.style.display = 'none';
+            pureCommentsUrlInput.disabled = true;
+            pureCommentsUrlInput.required = false;
+        }
     });
 </script>
 <?php require __DIR__ . '/../includes/admin-footer.php'; ?>

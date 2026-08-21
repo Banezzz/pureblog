@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../includes/updater.php';
 
 $config = load_config();
+$blogPostsEnabled = $config['enable_blog_posts'] ?? true;
+if (!$blogPostsEnabled) {
+    header('Location: ' . base_path() . '/admin/content.php');
+    exit;
+}
 
 $publishedPosts = array_values(array_filter(get_all_posts(true), static fn(array $post): bool => ($post['status'] ?? 'draft') === 'published'));
 $publishedCount = count($publishedPosts);
@@ -147,18 +149,10 @@ $versionCacheFile = PUREBLOG_BASE_PATH . '/content/.version-cache';
 $latestVersion    = '';
 $cacheAge         = is_file($versionCacheFile) ? (time() - (int) @filemtime($versionCacheFile)) : PHP_INT_MAX;
 if ($cacheAge > 21600) {
-    $ctx  = stream_context_create(['http' => [
-        'timeout' => 3,
-        'header'  => "User-Agent: Pureblog-Dashboard\r\nAccept: application/vnd.github+json\r\n",
-        'ignore_errors' => true,
-    ]]);
-    $json = @file_get_contents('https://api.github.com/repos/Banezzz/pureblog/releases/latest', false, $ctx);
-    if (is_string($json)) {
-        $data = @json_decode($json, true);
-        if (is_array($data) && isset($data['tag_name']) && is_string($data['tag_name'])) {
-            $latestVersion = trim($data['tag_name']);
-            @file_put_contents($versionCacheFile, $latestVersion);
-        }
+    $release = fetch_latest_pureblog_release();
+    if ($release['ok'] && $release['tag'] !== '') {
+        $latestVersion = $release['tag'];
+        @file_put_contents($versionCacheFile, $latestVersion);
     }
 } else {
     $cached = @file_get_contents($versionCacheFile);
@@ -171,38 +165,7 @@ $adminTitle = t('admin.dashboard.page_title');
 require __DIR__ . '/../includes/admin-head.php';
 ?>
     <main class="mid">
-
-        <p class="dashboard-write-post">
-            <?php $availableLayouts = get_layouts(); ?>
-            <?php if ($availableLayouts): ?>
-                <button type="button" id="new-post-button" class="save">
-                    <svg class="icon" aria-hidden="true"><use href="#icon-file-plus-corner"></use></svg>
-                    <?= e(t('admin.dashboard.write_post')) ?>
-                </button>
-                <dialog id="layout-picker" aria-labelledby="layout-picker-title">
-                    <h2 id="layout-picker-title"><?= e(t('admin.content.choose_layout')) ?></h2>
-                    <ul class="layout-picker-list">
-                        <li><a href="<?= base_path() ?>/admin/edit-post.php?action=new"><?= e(t('admin.content.default_post')) ?></a></li>
-                        <?php foreach ($availableLayouts as $layout): ?>
-                            <li><a href="<?= base_path() ?>/admin/edit-post.php?action=new&amp;layout=<?= urlencode($layout['name']) ?>"><?= e($layout['label']) ?></a></li>
-                        <?php endforeach; ?>
-                    </ul>
-                    <button type="button" id="layout-picker-close" class="delete"><?= e(t('admin.content.cancel')) ?></button>
-                </dialog>
-                <script>
-                    const button = document.getElementById('new-post-button');
-                    const dialog = document.getElementById('layout-picker');
-                    const close = document.getElementById('layout-picker-close');
-                    button.addEventListener('click', () => dialog.showModal());
-                    close.addEventListener('click', () => dialog.close());
-                </script>
-            <?php else: ?>
-                <a class="save" href="<?= base_path() ?>/admin/edit-post.php?action=new">
-                    <svg class="icon" aria-hidden="true"><use href="#icon-file-plus-corner"></use></svg>
-                    <?= e(t('admin.dashboard.write_post')) ?>
-                </a>
-            <?php endif; ?>
-        </p>
+        <h1><?= e(t('admin.nav.dashboard')) ?></h1>
 
         <!-- Top row: snapshot -->
         <div class="dashboard-stats-3">

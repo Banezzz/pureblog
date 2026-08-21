@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
 
 verify_csrf();
 
@@ -16,15 +12,12 @@ $editorType = trim($_POST['editor_type'] ?? 'post');
 $message = '';
 $error = '';
 
-// Validate slug to prevent path traversal
 if ($slug === '') {
     $error = t('admin.editor.error_upload_no_slug');
 } elseif (!isset($_FILES['image'])) {
     $error = t('admin.editor.error_upload_no_file');
 } elseif ($_FILES['image']['error'] !== UPLOAD_ERR_OK) {
     $error = t('admin.editor.error_upload_failed');
-} elseif ($_FILES['image']['size'] > (3 * 1024 * 1024)) {
-    $error = t('admin.editor.error_upload_too_large');
 } else {
     $allowedTypes = [
         'image/jpeg' => 'jpg',
@@ -33,16 +26,8 @@ if ($slug === '') {
         'image/webp' => 'webp',
         'image/avif' => 'avif',
     ];
-    $extToMime = [
-        'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg',
-        'png' => 'image/png', 'gif' => 'image/gif', 'webp' => 'image/webp',
-    ];
-    $finfo = class_exists('finfo') ? new finfo(FILEINFO_MIME_TYPE) : null;
-    $mimeType = $finfo ? ($finfo->file($_FILES['image']['tmp_name']) ?: '') : '';
-    if ($mimeType === '') {
-        $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
-        $mimeType = $extToMime[$ext] ?? '';
-    }
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mimeType = $finfo->file($_FILES['image']['tmp_name']) ?: '';
     if (!isset($allowedTypes[$mimeType])) {
         $error = t('admin.editor.error_upload_type');
     }
@@ -60,6 +45,10 @@ if ($error === '') {
     $baseDir = realpath(__DIR__ . '/../content/images');
     $uploadDir = __DIR__ . '/../content/images/' . $folder;
 
+    if ($baseDir !== false && !is_file($baseDir . '/.htaccess')) {
+        file_put_contents($baseDir . '/.htaccess', "<FilesMatch \"\.ph(p[0-9]?|tml)$\">\n    Require all denied\n</FilesMatch>\n");
+    }
+
     if ($baseDir === false) {
         $error = t('admin.editor.error_image_folder_missing');
     } elseif (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
@@ -71,16 +60,14 @@ if ($error === '') {
 }
 
 if ($error === '') {
-    // Force extension based on detected MIME type (prevents polyglot file attacks)
-    $basename = pathinfo(basename($_FILES['image']['name']), PATHINFO_FILENAME);
-    $basename = strtolower($basename);
-    $basename = preg_replace('/[^a-z0-9_-]/', '-', $basename) ?? '';
-    $basename = preg_replace('/-+/', '-', $basename) ?? '';
-    $basename = trim($basename, '-');
-    if ($basename === '') {
-        $basename = 'image-' . bin2hex(random_bytes(4));
+    $filename = basename($_FILES['image']['name']);
+    $filename = preg_replace('/[^a-zA-Z0-9._-]/', '-', $filename) ?? $filename;
+    $filename = preg_replace('/-+/', '-', $filename) ?? $filename;
+    $filename = trim($filename, '-');
+    $ext = pathinfo($filename, PATHINFO_EXTENSION);
+    if ($ext === '') {
+        $filename .= '.' . $allowedTypes[$mimeType];
     }
-    $filename = $basename . '.' . $allowedTypes[$mimeType];
 
     if ($filename === '') {
         $error = t('admin.editor.error_upload_invalid_name');
@@ -91,6 +78,13 @@ if ($error === '') {
         if (!move_uploaded_file($_FILES['image']['tmp_name'], $destination)) {
             $error = t('admin.editor.error_upload_save');
         } else {
+            strip_image_metadata($destination, $mimeType);
+            call_hook('on_image_uploaded', [$destination]);
+            $webpDestination = preg_replace('/\.[^.]+$/', '.webp', $destination) ?? $destination;
+            if ($webpDestination !== $destination && file_exists($webpDestination)) {
+                $destination = $webpDestination;
+            }
+            $filename = basename($destination);
             $url = base_path() . '/content/images/' . $folder . '/' . $filename;
             $altText = pathinfo($filename, PATHINFO_FILENAME) ?: 'image';
             $message = '![' . $altText . '](' . $url . ')';

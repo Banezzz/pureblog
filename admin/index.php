@@ -2,22 +2,26 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
+require __DIR__ . '/../functions.php';
 
 require_setup_redirect();
 
 start_admin_session();
+maybe_restore_admin_from_cookie();
 
 $config = load_config();
 $fontStack = font_stack_css($config['theme']['admin_font_stack'] ?? 'sans');
 $error = '';
 $username = '';
-
-// Use file-based IP lockout instead of session (persists across cookie clears)
-$isLockedOut = is_ip_locked_out();
+$now = time();
+$clientIp = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+$failureState = get_login_failure_state($clientIp);
+$lockoutUntil = $failureState['lockout_until'];
+$isLockedOut = $lockoutUntil > $now;
 
 if (is_admin_logged_in()) {
-    $adminLanding = ($config['admin_homepage'] ?? 'dashboard') === 'content' ? 'content.php' : 'dashboard.php';
+    $blogPostsEnabled = $config['enable_blog_posts'] ?? true;
+    $adminLanding = (!$blogPostsEnabled || ($config['admin_homepage'] ?? 'dashboard') === 'content') ? 'content.php' : 'dashboard.php';
     header('Location: ' . base_path() . '/admin/' . $adminLanding);
     exit;
 }
@@ -25,7 +29,7 @@ if (is_admin_logged_in()) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf();
     if ($isLockedOut) {
-        $remaining = get_lockout_remaining();
+        $remaining = $lockoutUntil - $now;
         $minutes = (int) ceil($remaining / 60);
         $error = t('admin.login.error_lockout', ['minutes' => $minutes]);
     } else {
@@ -37,18 +41,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ) {
             session_regenerate_id(true);
             $_SESSION['is_admin'] = true;
-            $_SESSION['login_failures'] = 0;
-            $_SESSION['lockout_until'] = 0;
-            $adminLanding = ($config['admin_homepage'] ?? 'dashboard') === 'content' ? 'content.php' : 'dashboard.php';
+            clear_login_failures($clientIp);
+            if (!empty($_POST['remember_me'])) {
+                set_remember_me_cookie();
+            }
+            $blogPostsEnabled = $config['enable_blog_posts'] ?? true;
+            $adminLanding = (!$blogPostsEnabled || ($config['admin_homepage'] ?? 'dashboard') === 'content') ? 'content.php' : 'dashboard.php';
             header('Location: ' . base_path() . '/admin/' . $adminLanding);
             exit;
         }
 
-        $failures = (int) ($_SESSION['login_failures'] ?? 0);
-        $failures++;
-        $_SESSION['login_failures'] = $failures;
-        if ($failures >= 5) {
-            $_SESSION['lockout_until'] = $now + (5 * 60);
+        $state = record_login_failure($clientIp);
+        if ($state['lockout_until'] > $now) {
+            $lockoutUntil = $state['lockout_until'];
+            $isLockedOut = true;
             $error = t('admin.login.error_lockout_5');
         } else {
             $error = t('admin.login.error_invalid');
@@ -76,6 +82,11 @@ require __DIR__ . '/../includes/admin-head.php';
 
             <label for="password"><?= e(t('admin.login.password')) ?></label>
             <input type="password" id="password" name="password" required<?= $isLockedOut ? ' disabled' : '' ?>>
+
+            <label class="checkbox-label">
+                <input type="checkbox" name="remember_me" value="1"<?= $isLockedOut ? ' disabled' : '' ?>>
+                <?= e(t('admin.login.remember_me')) ?>
+            </label>
             <button type="submit"<?= $isLockedOut ? ' disabled' : '' ?>><svg class="icon" aria-hidden="true"><use href="#icon-circle-check"></use></svg> <?= e(t('admin.login.submit')) ?></button>
         </form>
     </main>

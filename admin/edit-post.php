@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
 
 $config = load_config();
+$blogPostsEnabled = $config['enable_blog_posts'] ?? true;
+if (!$blogPostsEnabled) {
+    header('Location: ' . base_path() . '/admin/content.php');
+    exit;
+}
 $fontStack = font_stack_css($config['theme']['admin_font_stack'] ?? 'sans');
 
 $errors = [];
@@ -33,14 +34,15 @@ if ($isEditing) {
     $existing = get_post_by_slug($slugParam, true);
     if ($existing !== null && $existing !== false) {
         $post = [
-            'title' => $existing['title'] ?? '',
-            'slug' => $existing['slug'] ?? '',
-            'date' => $existing['date'] ?? current_site_datetime_for_storage($config),
-            'status' => $existing['status'] ?? 'draft',
-            'tags' => $existing['tags'] ?? [],
-            'description' => $existing['description'] ?? '',
-            'content' => $existing['content'] ?? '',
-            'layout' => $existing['layout'] ?? '',
+            'title'         => $existing['title'] ?? '',
+            'slug'          => $existing['slug'] ?? '',
+            'date'          => $existing['date'] ?? current_site_datetime_for_storage($config),
+            'status'        => $existing['status'] ?? 'draft',
+            'tags'          => $existing['tags'] ?? [],
+            'description'   => $existing['description'] ?? '',
+            'content'       => $existing['content'] ?? '',
+            'layout'        => $existing['layout'] ?? '',
+            'feature_image' => $existing['feature_image'] ?? '',
         ];
         $originalSlug = $existing['slug'] ?? '';
         $originalExisting = $existing;
@@ -76,14 +78,14 @@ if ($isEditing && $originalSlug !== '') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) {
-    verify_csrf();
     $post['title'] = trim($_POST['title'] ?? '');
     $post['slug'] = trim($_POST['slug'] ?? '');
     $post['date'] = trim($_POST['date'] ?? '');
     $post['status'] = trim($_POST['status'] ?? 'draft');
     $post['content'] = trim($_POST['content'] ?? '');
     $post['description'] = trim($_POST['description'] ?? '');
-    $post['layout'] = trim($_POST['post_layout'] ?? '');
+    $post['layout']        = trim($_POST['post_layout'] ?? '');
+    $post['feature_image'] = trim($_POST['feature_image'] ?? '');
     $tagsInput = trim($_POST['tags'] ?? '');
     $post['tags'] = $tagsInput === '' ? [] : array_values(array_filter(array_map('trim', explode(',', $tagsInput))));
     $originalSlug = trim($_POST['original_slug'] ?? '');
@@ -98,13 +100,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['admin_action_id'])) 
         }
     }
 
+    $post = apply_filter('on_filter_post', $post);
+
     if ($post['title'] === '') {
         $errors[] = t('admin.editor.error_title_required');
     } elseif ($post['slug'] === '' && slugify($post['title']) === '') {
         $errors[] = t('admin.editor.error_empty_slug');
     }
 
-    if (!in_array($post['status'], ['draft', 'published'], true)) {
+    if (!in_array($post['status'], ['draft', 'published', 'scheduled'], true)) {
         $errors[] = t('admin.editor.error_invalid_status');
     }
 
@@ -163,14 +167,28 @@ foreach ($allLayouts as $l) {
 }
 $layoutFields = $layoutDef ? ($layoutDef['fields'] ?? []) : [];
 
+$hasCustomTitle = false;
+$hasCustomContent = false;
+if ($layoutFields) {
+    foreach ($layoutFields as $field) {
+        $name = (string) ($field['name'] ?? '');
+        if ($name === 'title') {
+            $hasCustomTitle = true;
+        } elseif ($name === 'content') {
+            $hasCustomContent = true;
+        }
+    }
+}
+
+
 $adminTitle = t($isEditing ? 'admin.post_editor.edit_title' : 'admin.post_editor.new_title');
 $codeMirror = 'markdown';
 require __DIR__ . '/../includes/admin-head.php';
 ?>
     <main>
-        <h1><?= e(t('admin.post_editor.page_title')) ?></h1>
         <div class="editor-grid">
             <section class="editor-main">
+                <h1><?= e(t('admin.post_editor.page_title')) ?></h1>
                 <?php if ($errors): ?>
                 <div class="notice delete">
                     <ul>
@@ -195,6 +213,7 @@ require __DIR__ . '/../includes/admin-head.php';
                     <input type="hidden" name="original_status" value="<?= e($post['status']) ?>">
                     <input type="hidden" name="original_date" value="<?= e($post['date']) ?>">
                     <input type="hidden" name="post_layout" value="<?= e($currentLayout) ?>">
+                    <input type="hidden" id="feature-image-value" name="feature_image" value="<?= e($post['feature_image'] ?? '') ?>">
                     <?= csrf_field() ?>
 
                     <nav class="editor-actions">
@@ -206,6 +225,7 @@ require __DIR__ . '/../includes/admin-head.php';
                             <svg class="icon" aria-hidden="true"><use href="#icon-eye"></use></svg>
                             <?= e(t('admin.post_editor.preview')) ?>
                         </button>
+
                         <?php if ($isEditing && $post['slug'] !== ''): ?>
                             <button type="submit" form="delete-post-form" class="link-button delete" aria-label="<?= e(t('admin.post_editor.delete')) ?>" onclick="return confirm('<?= e(t('admin.post_editor.delete_confirm')) ?>');">
                                 <svg class="icon" aria-hidden="true"><use href="#icon-circle-x"></use></svg>
@@ -215,27 +235,54 @@ require __DIR__ . '/../includes/admin-head.php';
                         <span id="autosave-status" class="autosave-status" aria-live="polite"></span>
                     </nav>
 
-                    <label for="title"><?= e(t('admin.editor.title_label')) ?></label>
-                    <input type="text" id="title" name="title" value="<?= e($post['title']) ?>" required autocomplete="off">
+                    <?php if (!$hasCustomTitle): ?>
+                        <label for="title"><?= e(t('admin.editor.title_label')) ?></label>
+                        <input type="text" id="title" name="title" value="<?= e($post['title']) ?>" autocomplete="off">
+                    <?php endif; ?>
 
-                    <label for="content"><?= e(t('admin.editor.content_label')) ?> <span class="tip">(<a target="_blank" rel="noopener noreferrer" href="https://pureblog.org/markdown-helper"><?= e(t('admin.editor.tip_markdown')) ?></a>)</span></label>
-                    <textarea id="content" name="content" rows="18" autocomplete="off"><?= e($post['content']) ?></textarea>
+                    <?php if (!$hasCustomContent): ?>
+                        <label for="content"><?= e(t('admin.editor.content_label')) ?> <span class="tip">(<a target="_blank" rel="noopener noreferrer" href="https://pureblog.org/markdown-helper"><?= e(t('admin.editor.tip_markdown')) ?></a>)</span></label>
+                        <textarea id="content" name="content" rows="18" autocomplete="off"><?= e($post['content']) ?></textarea>
+                    <?php endif; ?>
 
                     <?php if ($layoutFields): ?>
                         <?php foreach ($layoutFields as $field):
                             $fieldName = (string) ($field['name'] ?? '');
-                            $fieldLabel = (string) ($field['label'] ?? $fieldName);
-                            $fieldType = (string) ($field['type'] ?? 'text');
-                            $fieldId = 'layout_field_' . $fieldName;
-                            $inputName = 'layout_field__' . $fieldName;
-                            $fieldValue = (string) ($originalExisting[$fieldName] ?? $post['layout_fields'][$fieldName] ?? '');
                             if ($fieldName === ''): continue; endif;
+
+                            $fieldLabel = (string) ($field['label'] ?? $fieldName);
+
+                            if ($fieldName === 'title') {
+                                $fieldType = (string) ($field['type'] ?? 'text');
+                                $fieldId = 'title';
+                                $inputName = 'title';
+                                $fieldValue = $post['title'];
+                            } elseif ($fieldName === 'content') {
+                                $fieldType = (string) ($field['type'] ?? 'markdown');
+                                $fieldId = 'content';
+                                $inputName = 'content';
+                                $fieldValue = $post['content'];
+                            } else {
+                                $fieldType = (string) ($field['type'] ?? 'text');
+                                $fieldId = 'layout_field_' . $fieldName;
+                                $inputName = 'layout_field__' . $fieldName;
+                                $fieldValue = (string) ($originalExisting[$fieldName] ?? $post['layout_fields'][$fieldName] ?? '');
+                            }
                         ?>
                             <?php if ($fieldType !== 'checkbox'): ?>
-                            <label for="<?= e($fieldId) ?>"><?= e($fieldLabel) ?></label>
+                            <label for="<?= e($fieldId) ?>">
+                                <?= e($fieldLabel) ?>
+                                <?php if ($fieldName === 'content'): ?>
+                                    <span class="tip">(<a target="_blank" rel="noopener noreferrer" href="https://pureblog.org/markdown-helper"><?= e(t('admin.editor.tip_markdown')) ?></a>)</span>
+                                <?php endif; ?>
+                            </label>
                             <?php endif; ?>
                             <?php if ($fieldType === 'markdown'): ?>
-                                <textarea id="<?= e($fieldId) ?>" name="<?= e($inputName) ?>" rows="8" data-layout-markdown autocomplete="off"><?= e($fieldValue) ?></textarea>
+                                <?php if ($fieldName === 'content'): ?>
+                                    <textarea id="content" name="content" rows="18" autocomplete="off"><?= e($fieldValue) ?></textarea>
+                                <?php else: ?>
+                                    <textarea id="<?= e($fieldId) ?>" name="<?= e($inputName) ?>" rows="8" data-layout-markdown autocomplete="off"><?= e($fieldValue) ?></textarea>
+                                <?php endif; ?>
                             <?php elseif ($fieldType === 'select'): ?>
                                 <?php $fieldOptions = is_array($field['options'] ?? null) ? $field['options'] : []; ?>
                                 <select id="<?= e($fieldId) ?>" name="<?= e($inputName) ?>">
@@ -259,7 +306,8 @@ require __DIR__ . '/../includes/admin-head.php';
                     <?php endif; ?>
                 </form>
                 <?php if ($isEditing && $post['slug'] !== ''): ?>
-                    <form method="post" action="<?= base_path() ?>/admin/delete-post.php" id="delete-post-form">
+                    <form method="post" action="<?= base_path() ?>/admin/delete-content.php" id="delete-post-form">
+                        <input type="hidden" name="type" value="post">
                         <input type="hidden" name="slug" value="<?= e($post['slug']) ?>">
                         <?= csrf_field() ?>
                     </form>
@@ -267,14 +315,20 @@ require __DIR__ . '/../includes/admin-head.php';
 
             </section>
             <aside class="editor-sidebar">
+                <div class="sidebar-header">
+                    <button type="button" class="sidebar-toggle" id="sidebar-toggle-tab" aria-label="<?= e(t('admin.post_editor.settings_title')) ?>" title="<?= e(t('admin.post_editor.settings_title')) ?>">
+                        <svg class="icon close-icon" aria-hidden="true"><use href="#icon-panel-right-close"></use></svg>
+                        <svg class="icon open-icon" aria-hidden="true"><use href="#icon-settings"></use></svg>
+                    </button>
+                    <span class="sidebar-title"><?= e(t('admin.post_editor.settings_title')) ?></span>
+                </div>
                 <section class="sidebar-section">
                     <div class="section-divider">
-                        <span class="title"><?= e(t('admin.post_editor.settings_title')) ?></span>
                         <label for="slug"><?= e(t('admin.editor.slug_label')) ?></label>
                         <input type="text" id="slug" name="slug" form="editor-form" value="<?= e($post['slug']) ?>" autocomplete="off">
                         
                         <label for="description"><?= e(t('admin.editor.description_label')) ?></label>
-                        <input type="text" id="description" name="description" form="editor-form" value="<?= e($post['description']) ?>" autocomplete="off">
+                        <textarea id="description" name="description" form="editor-form" rows="3" autocomplete="off"><?= e($post['description']) ?></textarea>
 
                         <label for="date"><?= e(t('admin.editor.date_label')) ?></label>
                         <input type="text" id="date" name="date" form="editor-form" value="<?= e($post['date']) ?>" autocomplete="off">
@@ -282,6 +336,7 @@ require __DIR__ . '/../includes/admin-head.php';
                         <label for="status"><?= e(t('admin.editor.status_label')) ?></label>
                         <select id="status" name="status" form="editor-form">
                             <option value="draft" <?= $post['status'] === 'draft' ? 'selected' : '' ?>><?= e(t('admin.editor.status_draft')) ?></option>
+                            <option value="scheduled" <?= $post['status'] === 'scheduled' ? 'selected' : '' ?>><?= e(t('admin.editor.status_scheduled')) ?></option>
                             <option value="published" <?= $post['status'] === 'published' ? 'selected' : '' ?>><?= e(t('admin.editor.status_published')) ?></option>
                         </select>
 
@@ -295,7 +350,7 @@ require __DIR__ . '/../includes/admin-head.php';
 
                 <section class="sidebar-section">
                     <div class="section-divider">
-                        <span class="title"><?= e(t('admin.editor.images_title')) ?></span>
+                        <span class="images-title"><?= e(t('admin.editor.images_title')) ?></span>
                         <form method="post" action="<?= base_path() ?>/admin/upload-image.php" enctype="multipart/form-data" class="upload-form">
                             <input type="hidden" name="slug" value="<?= e($post['slug']) ?>">
                             <input type="hidden" name="date" value="<?= e($post['date']) ?>">
@@ -312,17 +367,29 @@ require __DIR__ . '/../includes/admin-head.php';
                         <?php else: ?>
                             <p><?= e(t('admin.editor.attached_images')) ?></p>
                             <ul class="image-list">
-                            <?php foreach ($images as $image): ?>
-                                <li>
-                                    <code><?= e($image['filename']) ?></code>
-                                    <button type="button" class="link-button copy-markdown" data-markdown="<?= e($image['markdown']) ?>"><svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg> <?= e(t('admin.editor.copy')) ?></button>
-                                <form method="post" action="<?= base_path() ?>/admin/delete-image.php" class="inline-form" onsubmit="return confirm('<?= e(t('admin.post_editor.delete_image_confirm')) ?>');">
-                                    <input type="hidden" name="slug" value="<?= e($post['slug']) ?>">
-                                    <input type="hidden" name="date" value="<?= e($post['date']) ?>">
-                                    <input type="hidden" name="filename" value="<?= e($image['filename']) ?>">
-                                    <?= csrf_field() ?>
-                                    <button type="submit" class="link-button delete"><svg class="icon" aria-hidden="true"><use href="#icon-circle-x"></use></svg> <?= e(t('admin.editor.delete')) ?></button>
-                                </form>
+                            <?php foreach ($images as $image):
+                                $imageRawPath = '/content/images/' . $post['slug'] . '/' . $image['filename'];
+                                $isFeature    = ($post['feature_image'] ?? '') === $imageRawPath;
+                            ?>
+                                <li<?= $isFeature ? ' class="is-feature"' : '' ?>>
+                                    <div class="image-list-top">
+                                        <img src="<?= e($image['url']) ?>" width="30" height="30" class="image-list-preview" alt="<?= e($image['filename']) ?>" loading="lazy"/>
+                                        <code><?= e($image['filename']) ?></code>
+                                    </div>
+                                    <div class="image-list-actions">
+                                        <label class="feature-image-label">
+                                            <input type="checkbox" class="feature-image-check" data-url="<?= e($imageRawPath) ?>" data-filename="<?= e($image['filename']) ?>"<?= $isFeature ? ' checked' : '' ?>>
+                                            <?= e(t('admin.editor.feature_image')) ?>
+                                        </label>
+                                        <button type="button" class="link-button copy-markdown" data-markdown="<?= e($image['markdown']) ?>"><svg class="icon" aria-hidden="true"><use href="#icon-copy"></use></svg> <?= e(t('admin.editor.copy')) ?></button>
+                                        <form method="post" action="<?= base_path() ?>/admin/delete-image.php" class="inline-form" onsubmit="return confirm('<?= e(t('admin.post_editor.delete_image_confirm')) ?>');">
+                                            <input type="hidden" name="slug" value="<?= e($post['slug']) ?>">
+                                            <input type="hidden" name="date" value="<?= e($post['date']) ?>">
+                                            <input type="hidden" name="filename" value="<?= e($image['filename']) ?>">
+                                            <?= csrf_field() ?>
+                                            <button type="submit" class="link-button delete"><svg class="icon" aria-hidden="true"><use href="#icon-circle-x"></use></svg> <?= e(t('admin.editor.delete')) ?></button>
+                                        </form>
+                                    </div>
                                 </li>
                             <?php endforeach; ?>
                             </ul>
@@ -354,13 +421,15 @@ require __DIR__ . '/../includes/admin-head.php';
                 'copied'            => t('admin.editor.js_copied'),
                 'copy'              => t('admin.editor.copy'),
                 'copy_failed'       => t('admin.editor.js_copy_failed'),
-                'save_post_first'   => t('admin.editor.js_save_post_first'),
-                'save_page_first'   => t('admin.editor.js_save_page_first'),
-                'upload_failed'     => t('admin.editor.js_upload_failed'),
+                'save_post_first'          => t('admin.editor.js_save_post_first'),
+                'save_page_first'          => t('admin.editor.js_save_page_first'),
+                'upload_failed'            => t('admin.editor.js_upload_failed'),
+                'feature_image_confirm'    => t('admin.editor.js_feature_image_confirm'),
+                'feature_image_failed'     => t('admin.editor.js_feature_image_failed'),
             ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>,
         };
     </script>
-    <script src="<?= base_path() ?>/admin/js/editor.js?v=<?= e((string) @filemtime(__DIR__ . '/js/editor.js')) ?>"></script>
+    <script type="module" src="<?= base_path() ?>/admin/js/editor.js?v=<?= e((string) @filemtime(__DIR__ . '/js/editor.js')) ?>"></script>
     <script>
     (function () {
         const input = document.getElementById('tags');
@@ -422,7 +491,8 @@ require __DIR__ . '/../includes/admin-head.php';
 
             matches.forEach(tag => {
                 const li = document.createElement('li');
-                li.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
+                li.textContent = tag;
+                li.dataset.tag = tag;
                 li.addEventListener('mousedown', e => { e.preventDefault(); applySelection(tag); });
                 list.appendChild(li);
             });
@@ -438,7 +508,7 @@ require __DIR__ . '/../includes/admin-head.php';
                 const items = list.querySelectorAll('li');
                 if (activeIndex >= 0 && items[activeIndex]) {
                     e.preventDefault();
-                    applySelection(items[activeIndex].textContent);
+                    applySelection(items[activeIndex].dataset.tag);
                 }
             }
             if (e.key === 'Escape') hide();

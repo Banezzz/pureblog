@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../functions.php';
-require_setup_redirect();
-
-start_admin_session();
-require_admin_login();
+require __DIR__ . '/bootstrap.php';
 
 header('Content-Type: application/json');
 
@@ -32,6 +28,18 @@ if ($slug === '') {
     exit;
 }
 
+if (!in_array($editorType, ['post', 'page'], true)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => t('admin.editor.error_autosave_slug')]);
+    exit;
+}
+
+if (!is_safe_image_slug($slug)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => t('admin.editor.error_autosave_slug')]);
+    exit;
+}
+
 $autosaveDir  = PUREBLOG_BASE_PATH . '/content/autosaves';
 $autosaveFile = $autosaveDir . '/' . $editorType . '-' . $slug . '.json';
 
@@ -43,10 +51,9 @@ if ($action === 'discard') {
     exit;
 }
 
-// Ensure the autosaves directory exists and is protected.
+// Ensure the autosaves directory exists.
 if (!is_dir($autosaveDir)) {
     mkdir($autosaveDir, 0755, true);
-    file_put_contents($autosaveDir . '/.htaccess', "Deny from all\n");
 }
 
 if ($editorType === 'page') {
