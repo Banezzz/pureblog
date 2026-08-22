@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+// Custom admin_path is routed by index.php, which then requires admin/*.php.
+// Those admin files also require this file. Load it only once.
+if (defined('PUREBLOG_FUNCTIONS_LOADED')) {
+    return;
+}
+define('PUREBLOG_FUNCTIONS_LOADED', true);
+
 // PHP 7.4 polyfills for functions added in PHP 8.0.
 if (!function_exists('str_starts_with')) {
     function str_starts_with(string $haystack, string $needle): bool
