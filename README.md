@@ -2,7 +2,7 @@
 
 Pure Blog is a simple, flat-file blogging platform with a Markdown-first editor and a lightweight admin area. It stores posts and pages as Markdown files on disk—no database required.
 
-This repository is **v3.7.2** of Pure Blog, plus extra hardening and features for personal use.
+This repository is **v3.7.3** of Pure Blog, plus extra hardening and features for personal use.
 
 ## Features
 
