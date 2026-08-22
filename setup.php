@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/functions.php';
+require_once __DIR__ . '/functions.php';
 
 if (is_installed()) {
     header('Location: ' . base_path() . '/admin/index.php');
